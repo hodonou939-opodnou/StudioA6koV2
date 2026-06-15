@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.env
+.env.*
+*.log
+dev-server.log
+cookies.txt
+c2.txt
+j*.txt
+*.txt
+README.md

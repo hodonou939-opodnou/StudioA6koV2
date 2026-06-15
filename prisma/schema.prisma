@@ -1,0 +1,265 @@
+// Studio A6ko — PostgreSQL schema
+// Designed for: SSO + anonymous-claim credits, full admin control,
+// and rich logging of every AI interaction so the product can learn over time.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTH (Better Auth core + admin + anonymous plugins)
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+
+  // admin plugin
+  role          String    @default("user") // "user" | "admin"
+  banned        Boolean   @default(false)
+  banReason     String?
+  banExpires    DateTime?
+
+  // anonymous plugin — true until the guest links a real SSO identity
+  isAnonymous   Boolean   @default(false)
+
+  // domain fields
+  credits       Int       @default(3)   // every new (incl. anonymous) user gets 3 free
+  locale        String    @default("fr") // FR/EN parity with current app
+  shortId       String?   @unique        // public "A6xxxx" id — created at first visit, stable per account
+  legacyUserId  String?   @unique        // 6-char id migrated from Firestore
+  legacyUid     String?   @unique        // old Firebase Auth uid
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastActiveAt  DateTime  @default(now())
+
+  sessions      Session[]
+  accounts      Account[]
+  ledger        CreditLedger[]
+  generations   Generation[]
+  feedback      Feedback[]
+  payments      Payment[]
+
+  @@index([role])
+  @@index([createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String    // provider-side id
+  providerId            String    // "google" | "apple" | "facebook" | "tiktok"
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+// Admin-controlled app settings, e.g. which image model powers each feature.
+// keys: "model:default", "model:PHOTOSHOOT", "model:ESSAYAGE", "model:CREATIVES" -> "GEMINI" | "OPENAI"
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// ─────────────────────────────────────────────────────────────
+// CREDITS — append-only ledger (audit-proof; balance = User.credits cache)
+// ─────────────────────────────────────────────────────────────
+
+enum CreditReason {
+  SIGNUP_BONUS      // initial 3 free
+  GENERATION_SPEND  // consumed by an AI op
+  REFUND            // failed generation auto-refund
+  PURCHASE          // Moneroo payment
+  ADMIN_GRANT       // manual add by admin
+  ADMIN_REVOKE      // manual remove by admin
+  ANON_CLAIM        // balance carried over when anon links an account
+}
+
+model CreditLedger {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta        Int          // + grant / - spend
+  balanceAfter Int
+  reason       CreditReason
+  note         String?
+  adminId      String?      // set for ADMIN_GRANT/REVOKE
+  paymentId    String?      @unique
+  payment      Payment?     @relation(fields: [paymentId], references: [id])
+  generationId String?
+  generation   Generation?  @relation(fields: [generationId], references: [id])
+  createdAt    DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([reason])
+}
+
+// ─────────────────────────────────────────────────────────────
+// GENERATIONS — every AI call, logged for analytics + "LLM learning"
+// ─────────────────────────────────────────────────────────────
+
+enum Feature {
+  PHOTOSHOOT
+  ESSAYAGE      // virtual try-on
+  CREATIVES
+  ANIMATION
+  MODEL_GEN
+  IMAGE_EDIT
+}
+
+enum Provider {
+  GEMINI
+  OPENAI        // gpt-image-1
+}
+
+enum GenStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Generation {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature     Feature
+  provider    Provider
+  model       String     // e.g. "gemini-2.5-flash-image", "gpt-image-1"
+  params      Json       // the full structured options (pose, lighting, garment, etc.)
+  inputs      Json?      // references to uploaded image ids / hashes
+  outputUrl   String?    // stored result (object storage)
+  status      GenStatus  @default(PENDING)
+  creditCost  Int        @default(0)
+  latencyMs   Int?
+  errorCode   String?
+  createdAt   DateTime   @default(now())
+
+  feedback    Feedback[]
+  ledger      CreditLedger[]
+  costEvents  CostEvent[]
+
+  @@index([userId, createdAt])
+  @@index([feature])
+  @@index([provider, model])
+  @@index([status])
+}
+
+// User signals on a result — the real learning signal
+enum FeedbackAction {
+  RATE
+  REGENERATE
+  EDIT
+  DOWNLOAD
+  SHARE
+}
+
+model Feedback {
+  id           String         @id @default(cuid())
+  generationId String
+  generation   Generation     @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action       FeedbackAction
+  rating       Int?           // -1 / +1 or 1..5
+  editPrompt   String?        // the instruction given on EDIT
+  createdAt    DateTime       @default(now())
+
+  @@index([generationId])
+  @@index([action])
+}
+
+// ─────────────────────────────────────────────────────────────
+// COST TRACKING — per-provider spend for the admin dashboard
+// ─────────────────────────────────────────────────────────────
+
+model CostEvent {
+  id           String     @id @default(cuid())
+  provider     Provider
+  model        String
+  operation    String     // "image.generate", "vision", "video", ...
+  units        Int        @default(1)
+  costUsd      Decimal    @db.Decimal(12, 6)
+  generationId String?
+  generation   Generation? @relation(fields: [generationId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@index([provider, createdAt])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAYMENTS — Moneroo, automated via webhook
+// ─────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  INITIATED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       String         @default("moneroo")
+  externalRef    String         @unique // Moneroo transaction id
+  packId         String         // "discovery" | "creator" | "studio" | "pro"
+  amount         Decimal        @db.Decimal(12, 2)
+  currency       String         @default("XOF")
+  creditsGranted Int
+  status         PaymentStatus  @default(INITIATED)
+  rawWebhook     Json?
+  createdAt      DateTime       @default(now())
+  paidAt         DateTime?
+
+  ledger         CreditLedger[]
+
+  @@index([userId])
+  @@index([status])
+}

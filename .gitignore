@@ -1,0 +1,38 @@
+# dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# secrets & local env — NEVER commit
+.env
+.env.local
+.env.*.local
+.env.production
+
+# logs & scratch
+*.log
+dev-server.log
+cookies.txt
+c2.txt
+j*.txt
+
+# misc
+.DS_Store
+*.pem
+
+# local deploy artifacts (never needed in the repo)
+cloud-sql-proxy*.exe
+*.exe
+.firebase/
+jx.txt
+j2.txt
+j3.txt
+j4.txt

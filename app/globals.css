@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbars on scroll containers (used across the studio panels) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* --- Auth modal (Better Auth login) --- */
+.a6ko-modal-overlay {
+  position: fixed; inset: 0; background: rgba(17, 24, 39, 0.6);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.a6ko-modal {
+  background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px;
+  padding: 28px; width: min(420px, 92vw); text-align: center; color: #111827;
+}
+.a6ko-modal h2 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+.a6ko-modal p { margin: 0 0 18px; color: #4B5563; font-size: 14px; }
+.a6ko-provider-list { display: flex; flex-direction: column; gap: 10px; }
+.a6ko-provider-btn {
+  padding: 12px; border-radius: 12px; border: 1px solid #E5E7EB;
+  background: #FFF8F0; color: #111827; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.a6ko-provider-btn:hover { background: #16A34A; color: #fff; border-color: #16A34A; }
+.a6ko-modal-close { margin-top: 16px; background: none; border: none; color: #4B5563; cursor: pointer; }
