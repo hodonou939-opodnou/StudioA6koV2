@@ -12,6 +12,16 @@ type Stats = {
   revenue: { amount: number; payments: number };
 };
 
+type Insights = {
+  windowDays: number;
+  generationsByProvider: { provider: string; count: number; avgLatencyMs: number | null }[];
+  generationsByFeature: { feature: string; count: number }[];
+  feedbackByAction: { action: string; count: number }[];
+  providerPerformance: { provider: string; positive: number; negative: number; winRate: number | null }[];
+  topPoses: { key: string; count: number }[];
+  topEnvironments: { key: string; count: number }[];
+};
+
 type AdminUser = {
   id: string;
   email: string | null;
@@ -32,6 +42,7 @@ export default function AdminDashboard() {
     default: "GEMINI" | "OPENAI";
     features: Record<string, "GEMINI" | "OPENAI" | null>;
   } | null>(null);
+  const [insights, setInsights] = useState<Insights | null>(null);
 
   async function loadModelCfg() {
     const res = await fetch("/api/admin/model-config");
@@ -59,9 +70,14 @@ export default function AdminDashboard() {
     fetch("/api/admin/stats").then(async (r) => {
       if (r.ok) setStats(await r.json());
     });
+    fetch("/api/admin/insights").then(async (r) => {
+      if (r.ok) setInsights(await r.json());
+    });
     loadUsers();
     loadModelCfg();
   }, []);
+
+  const MODEL_LABEL_SHORT: Record<string, string> = { GEMINI: "Gemini", OPENAI: "ChatGPT Image 2", UNKNOWN: "?" };
 
   async function adjustCredits(id: string) {
     const input = prompt("Crédits à ajouter (négatif pour retirer) :");
@@ -121,6 +137,43 @@ export default function AdminDashboard() {
         </section>
       )}
 
+      {insights && (
+        <section style={{ border: "1px solid #e5e5e5", borderRadius: 12, padding: 16, margin: "16px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 18 }}>🧠 Apprentissage — ce qui marche ({insights.windowDays} j)</h2>
+            <a
+              href="/api/admin/export-dataset"
+              style={{ fontSize: 13, fontWeight: 700, background: "#111827", color: "#fff", padding: "8px 14px", borderRadius: 8, textDecoration: "none" }}
+            >
+              ⬇ Exporter le dataset (.jsonl)
+            </a>
+          </div>
+          <p style={{ margin: "4px 0 14px", fontSize: 13, color: "#666" }}>
+            Signal positif = téléchargé / partagé / 👍 · Signal négatif = 👎. Le « taux de réussite » compare les modèles.
+          </p>
+
+          {/* Provider A/B win rates */}
+          <h3 style={{ fontSize: 14, margin: "8px 0" }}>Performance par modèle (A/B)</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12, marginBottom: 16 }}>
+            {insights.providerPerformance.length === 0 && <em style={{ color: "#999", fontSize: 13 }}>Pas encore de signaux.</em>}
+            {insights.providerPerformance.map((p) => (
+              <div key={p.provider} style={{ border: "1px solid #eee", borderRadius: 10, padding: 14 }}>
+                <div style={{ fontSize: 12, color: "#666" }}>{MODEL_LABEL_SHORT[p.provider] ?? p.provider}</div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>{p.winRate === null ? "—" : `${p.winRate}%`}</div>
+                <div style={{ fontSize: 12, color: "#999" }}>👍 {p.positive} · 👎 {p.negative}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>
+            <MiniList title="Volume par modèle" items={insights.generationsByProvider.map((g) => ({ key: `${MODEL_LABEL_SHORT[g.provider] ?? g.provider}${g.avgLatencyMs ? ` · ${(g.avgLatencyMs / 1000).toFixed(1)}s` : ""}`, count: g.count }))} />
+            <MiniList title="Signaux utilisateurs" items={insights.feedbackByAction.map((f) => ({ key: f.action, count: f.count }))} />
+            <MiniList title="Poses gagnantes" items={insights.topPoses} />
+            <MiniList title="Décors gagnants" items={insights.topEnvironments} />
+          </div>
+        </section>
+      )}
+
       <div style={{ margin: "16px 0" }}>
         <input
           placeholder="Rechercher (email, nom, id)…"
@@ -153,6 +206,21 @@ export default function AdminDashboard() {
         </tbody>
       </table>
     </main>
+  );
+}
+
+function MiniList({ title, items }: { title: string; items: { key: string; count: number }[] }) {
+  return (
+    <div style={{ border: "1px solid #eee", borderRadius: 10, padding: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#444", marginBottom: 8 }}>{title}</div>
+      {items.length === 0 && <em style={{ color: "#999", fontSize: 12 }}>—</em>}
+      {items.map((it) => (
+        <div key={it.key} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "2px 0" }}>
+          <span style={{ color: "#555", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 180 }}>{it.key}</span>
+          <strong>{it.count}</strong>
+        </div>
+      ))}
+    </div>
   );
 }
 

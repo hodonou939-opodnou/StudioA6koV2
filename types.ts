@@ -148,6 +148,7 @@ export interface Asset {
     environment: GenerationOptions['environment'];
     aspectRatio: GenerationOptions['aspectRatio'];
     marketingCopy?: string;
+    generationId?: string; // server Generation.id — lets us attach learning feedback
   };
   animationOptions?: AnimationOptions;
   originalImage?: {

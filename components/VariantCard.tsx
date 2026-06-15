@@ -40,6 +40,18 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
   const [isShareAssistOpen, setIsShareAssistOpen] = useState(false);
   const [activeShareChannel, setActiveShareChannel] = useState<'instagram' | 'tiktok' | 'facebook' | 'whatsapp' | null>(null);
 
+  // Persist a learning signal to the server (fire-and-forget; never blocks UX).
+  // Tied to the exact generation via metadata.generationId set by /api/gemini.
+  const sendFeedback = (action: 'RATE' | 'DOWNLOAD' | 'SHARE' | 'REGENERATE' | 'EDIT', extra: Record<string, unknown> = {}) => {
+    const generationId = asset.metadata?.generationId;
+    if (!generationId) return; // assets created before this feature have no id
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ generationId, assetRef: asset.id, action, ...extra }),
+    }).catch(() => {});
+  };
+
   const handleDownload = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
@@ -73,6 +85,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
         : "Downloaded successfully!";
       setDownloadSuccess(successText);
       setTimeout(() => setDownloadSuccess(''), 4000);
+      sendFeedback('DOWNLOAD'); // strongest "I like this result" signal
 
       if (shouldRevoke) {
         setTimeout(() => URL.revokeObjectURL(downloadUrl), 3000);
@@ -95,8 +108,14 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
     }
   };
 
-  const handleLike = () => onFeedback(asset.id, 'like');
-  const handleDislike = () => onFeedback(asset.id, 'dislike');
+  const handleLike = () => {
+    sendFeedback('RATE', { rating: asset.feedback === 'like' ? 0 : 1 });
+    onFeedback(asset.id, 'like');
+  };
+  const handleDislike = () => {
+    sendFeedback('RATE', { rating: asset.feedback === 'dislike' ? 0 : -1 });
+    onFeedback(asset.id, 'dislike');
+  };
   
   const submitEdit = async () => {
       if (!onEdit || !editRequestPrompt.trim()) return;
@@ -114,6 +133,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
   };
 
   const handleShare = () => {
+    sendFeedback('SHARE'); // intent-to-share is a strong positive signal
     setIsShareAssistOpen(true);
     setActiveShareChannel(null);
   };

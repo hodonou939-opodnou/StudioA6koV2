@@ -207,10 +207,12 @@ model Feedback {
   action       FeedbackAction
   rating       Int?           // -1 / +1 or 1..5
   editPrompt   String?        // the instruction given on EDIT
+  assetRef     String?        // which specific variant (client asset id) the signal is about
   createdAt    DateTime       @default(now())
 
   @@index([generationId])
   @@index([action])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────────────────────

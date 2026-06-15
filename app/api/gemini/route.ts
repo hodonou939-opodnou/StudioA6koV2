@@ -37,6 +37,51 @@ function computeCost(action: string, args: any[]): number {
 const noop = () => {};
 const key = () => process.env.GEMINI_API_KEY;
 
+// Snapshot the meaningful, learnable knobs of a request (NO base64 images) so the
+// admin insights + future fine-tuning dataset can correlate settings ↔ outcomes.
+function safeParams(action: string, args: any[]): any {
+  const o = args?.[0] ?? {};
+  if (action === "generateFashionShoot") {
+    return {
+      action,
+      intent: o.intent,
+      pose: o.pose,
+      environment: o.environment,
+      backgroundType: o.backgroundType,
+      colorPalette: o.colorPalette,
+      cameraAngle: o.cameraAngle,
+      cameraAxis: o.cameraAxis,
+      cameraDistance: o.cameraDistance,
+      cameraLens: o.cameraLens,
+      aspectRatio: o.aspectRatio,
+      lightingSetup: o.lightingSetup,
+      lightingMood: o.lightingMood,
+      postProcessing: o.postProcessing,
+      filmGrain: o.filmGrain,
+      tattoos: o.tattoos,
+      variants: o.variants ?? 1,
+      watermark: o.watermark,
+      hasGarmentImage: !!o.garment?.image,
+      hasModelImage: !!o.model?.image,
+    };
+  }
+  return { action, variants: o.variants ?? 1 };
+}
+
+// Stamp the server Generation.id onto each returned asset's metadata so the
+// client can post 👍/👎/download/share signals tied to the exact generation.
+function attachGenerationId(result: any, generationId: string): any {
+  if (Array.isArray(result)) {
+    return result.map((a) =>
+      a && a.metadata ? { ...a, metadata: { ...a.metadata, generationId } } : a,
+    );
+  }
+  if (result && typeof result === "object" && result.metadata) {
+    return { ...result, metadata: { ...result.metadata, generationId } };
+  }
+  return result;
+}
+
 // Reproduces the old server.ts dispatch — runs the real Gemini calls server-side.
 async function dispatch(
   action: string,
@@ -97,7 +142,7 @@ export async function POST(req: NextRequest) {
         feature: FEATURE[action] ?? Feature.PHOTOSHOOT,
         provider: Provider.GEMINI,
         model: "gemini",
-        params: { action, variants: args?.[0]?.variants ?? 1 },
+        params: safeParams(action, args),
         creditCost: cost,
         status: GenStatus.PENDING,
       },
@@ -126,9 +171,18 @@ export async function POST(req: NextRequest) {
       const result = await dispatch(action, args, provider);
       await prisma.generation.update({
         where: { id: gen.id },
-        data: { status: GenStatus.SUCCESS, latencyMs: Date.now() - startedAt },
+        data: {
+          status: GenStatus.SUCCESS,
+          latencyMs: Date.now() - startedAt,
+          // Record which model actually served this — enables provider A/B in insights.
+          provider: provider === "OPENAI" ? Provider.OPENAI : Provider.GEMINI,
+          model:
+            provider === "OPENAI"
+              ? process.env.OPENAI_IMAGE_MODEL || "gpt-image-2"
+              : "gemini-image",
+        },
       });
-      return NextResponse.json(result);
+      return NextResponse.json(attachGenerationId(result, gen.id));
     } catch (err) {
       await refund(userId, cost, gen.id); // refund the FULL reserved amount
       await prisma.generation.update({
