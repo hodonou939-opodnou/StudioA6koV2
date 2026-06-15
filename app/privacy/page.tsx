@@ -35,6 +35,15 @@ export default function PrivacyPage() {
         paiement Moneroo, hebergement Google Cloud). Nous ne vendons pas vos donnees.
       </p>
 
+      <h3>Galerie communautaire (offre gratuite)</h3>
+      <p>
+        Les creations que vous telechargez dans le cadre de l&apos;offre gratuite peuvent etre
+        mises en avant, de maniere anonyme (uniquement l&apos;image, le pays et la date, jamais
+        votre nom ou e-mail), dans notre galerie publique a des fins de demonstration. Les comptes
+        ayant effectue un achat ne sont jamais publies. Vous pouvez demander le retrait d&apos;une
+        image a tout moment via le support.
+      </p>
+
       <h3>Vos droits et suppression</h3>
       <p>
         Vous pouvez demander l&apos;acces ou la suppression de votre compte et de vos donnees via WhatsApp /

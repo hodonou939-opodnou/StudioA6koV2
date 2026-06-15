@@ -52,6 +52,19 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
     }).catch(() => {});
   };
 
+  // Free-tier creations the user downloads are featured (anonymously) in the
+  // public community gallery for social proof. Server enforces free-only.
+  const publishToGallery = () => {
+    const generationId = asset.metadata?.generationId;
+    const b64 = asset.base64 || (asset.url?.startsWith('data:') ? asset.url : '');
+    if (!generationId || !b64 || asset.type !== 'image') return;
+    fetch('/api/gallery/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ generationId, base64: b64 }),
+    }).catch(() => {});
+  };
+
   const handleDownload = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
@@ -86,6 +99,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
       setDownloadSuccess(successText);
       setTimeout(() => setDownloadSuccess(''), 4000);
       sendFeedback('DOWNLOAD'); // strongest "I like this result" signal
+      publishToGallery();       // feature free-tier creations as social proof
 
       if (shouldRevoke) {
         setTimeout(() => URL.revokeObjectURL(downloadUrl), 3000);

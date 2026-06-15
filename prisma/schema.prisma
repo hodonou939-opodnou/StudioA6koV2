@@ -177,6 +177,8 @@ model Generation {
   creditCost  Int        @default(0)
   latencyMs   Int?
   errorCode   String?
+  isPublic    Boolean    @default(false) // featured in the public community gallery
+  country     String?    // best-effort geo at publish time (social proof only)
   createdAt   DateTime   @default(now())
 
   feedback    Feedback[]
@@ -187,6 +189,7 @@ model Generation {
   @@index([feature])
   @@index([provider, model])
   @@index([status])
+  @@index([isPublic, createdAt])
 }
 
 // User signals on a result — the real learning signal

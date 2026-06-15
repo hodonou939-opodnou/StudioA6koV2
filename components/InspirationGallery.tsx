@@ -1,5 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Icon } from './Icon';
+
+// --- Real community creations (social proof) helpers ---
+const FEATURE_TO_TOOL: Record<string, string> = {
+  PHOTOSHOOT: 'photoshoot', ESSAYAGE: 'essayage', CREATIVES: 'creatives',
+  ANIMATION: 'photoshoot', MODEL_GEN: 'photoshoot', IMAGE_EDIT: 'creatives',
+};
+const flagEmoji = (cc?: string | null) =>
+  cc && /^[A-Za-z]{2}$/.test(cc)
+    ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+    : '🌍';
+const regionName = (cc: string | null | undefined, lang: string) => {
+  if (!cc) return lang === 'fr' ? 'Communauté' : 'Community';
+  try {
+    return new (Intl as any).DisplayNames([lang], { type: 'region' }).of(cc.toUpperCase()) || cc;
+  } catch {
+    return cc;
+  }
+};
 
 interface InspirationGalleryProps {
   T: any;
@@ -274,8 +292,47 @@ const DYNAMIC_POOL = [
 export const InspirationGallery: React.FC<InspirationGalleryProps> = ({ T, language }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [likedItems, setLikedItems] = useState<Record<string, boolean>>({});
+  const [realItems, setRealItems] = useState<any[]>([]);
 
   const isFR = language === 'fr';
+
+  // Pull real community creations (downloaded free-tier results) — social proof.
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/gallery')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d) => {
+        if (!alive || !Array.isArray(d.items)) return;
+        const mapped = d.items
+          .filter((it: any) => it.url)
+          .map((it: any) => {
+            const days = Math.max(0, Math.floor((Date.now() - new Date(it.createdAt).getTime()) / 86400000));
+            const dateTag =
+              days <= 0 ? (isFR ? "Aujourd’hui" : 'Today')
+              : days === 1 ? (isFR ? 'Hier' : 'Yesterday')
+              : (isFR ? `Il y a ${days} j` : `${days}d ago`);
+            const tool = FEATURE_TO_TOOL[it.feature] || 'photoshoot';
+            const title =
+              tool === 'essayage' ? (isFR ? 'Essayage de la communauté' : 'Community try-on')
+              : tool === 'creatives' ? (isFR ? 'Création de la communauté' : 'Community creative')
+              : (isFR ? 'Séance de la communauté' : 'Community photoshoot');
+            return {
+              id: `real-${it.id}`,
+              url: it.url,
+              tool,
+              title,
+              author: `${flagEmoji(it.country)} ${regionName(it.country, language)}`,
+              dateTag,
+              isNew: days <= 1,
+            };
+          });
+        setRealItems(mapped);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [isFR, language]);
 
   // Compute how many items of the dynamic pool have been "released" today based on June 2, 2026.
   const computedList = useMemo(() => {
@@ -337,10 +394,13 @@ export const InspirationGallery: React.FC<InspirationGalleryProps> = ({ T, langu
     }));
   };
 
+  // Real community creations first (authentic social proof), curated examples after.
+  const mergedList = useMemo(() => [...realItems, ...computedList], [realItems, computedList]);
+
   const filteredCreatives = useMemo(() => {
-    if (activeCategory === 'all') return computedList;
-    return computedList.filter(c => c.tool === activeCategory);
-  }, [computedList, activeCategory]);
+    if (activeCategory === 'all') return mergedList;
+    return mergedList.filter(c => c.tool === activeCategory);
+  }, [mergedList, activeCategory]);
 
   return (
     <div className="animate-in fade-in duration-500 max-w-7xl mx-auto px-2">
