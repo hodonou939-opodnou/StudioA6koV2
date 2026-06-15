@@ -216,9 +216,11 @@ const executeWithRetry = async <T>(
         }
     }
     
-    // Finally, backup key as a last resort
-    const backupKey = "AIzaSyBdoIqgnrRQYidbXNPm53pAT-N_CkSd0-I";
-    if (!candidates.includes(backupKey)) {
+    // Optional last-resort fallback key from env (server-side only). NEVER hardcode
+    // an API key here — this module is bundled to the browser, so a literal key
+    // would be extractable by anyone. The real key comes from GEMINI_API_KEY above.
+    const backupKey = getEnvVar('GEMINI_FALLBACK_API_KEY');
+    if (backupKey && backupKey.trim().length > 0 && !candidates.includes(backupKey)) {
         candidates.push(backupKey);
     }
     
