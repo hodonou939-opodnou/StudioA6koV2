@@ -66,7 +66,7 @@ export const AuthFlowModal: React.FC<Props> = ({ mode, language, shortId, onClos
           {/* ---- LOGIN ---- */}
           {mode === "login" && (
             <>
-              <div className="w-14 h-14 bg-brand-primary/15 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">✨</div>
+              <img src="/icon-512.png" alt="A6ko" className="w-14 h-14 rounded-2xl object-cover mx-auto mb-4 shadow-sm" />
               <h2 className="text-xl font-black text-brand-text leading-tight">
                 {isFR
                   ? "Créez un compte ou connectez-vous en un clic pour utiliser vos crédits gratuits"
