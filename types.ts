@@ -11,6 +11,8 @@ export interface ModelOptions {
   bodyDescription?: string;
   heightCm?: number | string;
   isSitting?: boolean;
+  // Stored multi-angle face references (injected server-side) to boost likeness.
+  faceRefs?: { base64: string; mimeType: string }[];
 }
 
 export interface GarmentOptions {

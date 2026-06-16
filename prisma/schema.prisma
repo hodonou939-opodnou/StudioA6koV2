@@ -48,9 +48,24 @@ model User {
   generations   Generation[]
   feedback      Feedback[]
   payments      Payment[]
+  faceRefs      FaceRef[]
 
   @@index([role])
   @@index([createdAt])
+}
+
+// Stored multi-angle face references for a user — captured once (guided), reused
+// on every login to boost likeness. PRIVATE (never public): the bytes live in a
+// private bucket and are only streamed back to their owner / used server-side.
+model FaceRef {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  objectPath String   // path in the private faces bucket
+  angle      String   @default("front") // front | left | right | extra
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Session {

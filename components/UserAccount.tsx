@@ -3,6 +3,7 @@ import type { UserState } from '../types';
 import { WHATSAPP_SUPPORT_LINK } from '../constants';
 import { signIn, signOut } from '@/lib/auth-client';
 import { saveUserState } from '../utils/localStorage';
+import { FaceProfileCard } from './FaceProfileCard';
 
 interface UserAccountProps {
     userState: UserState | null;
@@ -324,6 +325,9 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
         </div>
 
       </div>
+
+      {/* Face accuracy booster — persists on the account, auto-applied to every generation */}
+      <FaceProfileCard isFR={isFR} isGuest={isGuest} onRequireLogin={onRequireLogin} />
 
       {/* SECTION 1 — COÛT PAR ACTION & INTERACTIVE BUDGET ESTIMATOR */}
       <div className="space-y-6">

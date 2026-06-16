@@ -3,6 +3,7 @@ import { ControlsPanel } from './ControlsPanel';
 import { Header } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
 import { VariantCard } from './VariantCard';
+import { FaceProfileCard } from './FaceProfileCard';
 import { AnimationModal } from './AnimationModal';
 import { PaywallModal } from './PaywallModal';
 import { PaymentVerificationModal } from './PaymentVerificationModal';
@@ -577,6 +578,9 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
       />
       <main className="container mx-auto p-4 pb-24 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 xl:col-span-3 controls-panel lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto no-scrollbar">
+          <div className="mb-4">
+            <FaceProfileCard isFR={language === 'fr'} isGuest={isGuest} onRequireLogin={onRequireLogin} />
+          </div>
           <ControlsPanel
             options={options}
             setOptions={setOptions}

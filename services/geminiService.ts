@@ -1740,6 +1740,18 @@ export const generateFashionShoot = async (
              imageParts.push({ inlineData: { data: finalOptions.conferenceKakimonoLogo.base64, mimeType: finalOptions.conferenceKakimonoLogo.mimeType } });
         }
 
+        // Stored multi-angle face references (server-injected) — appended last so
+        // they never push out the essential model/garment refs on capped providers.
+        if (finalOptions.model.faceRefs?.length) {
+            for (const fr of finalOptions.model.faceRefs) {
+                imageParts.push({ inlineData: { data: fr.base64, mimeType: fr.mimeType } });
+            }
+        }
+
+        const faceRefInstruction = finalOptions.model.faceRefs?.length
+            ? `\n**ADDITIONAL FACE REFERENCES (CRITICAL FOR LIKENESS):** ${finalOptions.model.faceRefs.length} extra close-up image(s) of the SAME person's face from other angles are provided at the end. Use them together with the first image to reconstruct the EXACT facial morphology with full 3D consistency — bone structure, eye shape/spacing, nose, mouth, jawline and proportions. The rendered face MUST precisely match this specific person from the required angle.`
+            : '';
+
         let extraNegative = '';
         if (finalOptions.companion.enabled) {
              extraNegative = ', clones, identical twins, doppelganger, same face, split screen';
@@ -1750,7 +1762,7 @@ export const generateFashionShoot = async (
              }
         }
 
-        const textPrompt = `${basePrompt}\n**Negative prompt:** ${getNegativePrompt(finalOptions)}${finalOptions.tattoos !== 'none' ? ', ugly tattoos' : ''}${extraNegative}`;
+        const textPrompt = `${basePrompt}${faceRefInstruction}\n**Negative prompt:** ${getNegativePrompt(finalOptions)}${finalOptions.tattoos !== 'none' ? ', ugly tattoos' : ''}${extraNegative}`;
         const textPart = { text: textPrompt };
         
         const parts = [...imageParts, textPart];

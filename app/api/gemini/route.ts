@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { spend, refund, InsufficientCreditsError } from "@/lib/credits";
 import { getProviderForFeature } from "@/lib/model-config";
+import { downloadFace } from "@/lib/face-storage";
 import { Feature, Provider, GenStatus } from "@prisma/client";
 
 export const maxDuration = 300; // long-running image/video generation
@@ -165,6 +166,26 @@ export async function POST(req: NextRequest) {
     // Admin-selected image model for this feature (per-page override → default).
     const featureName = (body.feature as string) || String(FEATURE[action] ?? "");
     const provider = await getProviderForFeature(featureName);
+
+    // Inject the user's stored multi-angle face references (if any) so the model
+    // reconstructs their exact face. Bonus refs — never replace the model/garment.
+    if (action === "generateFashionShoot" && args?.[0]?.model) {
+      try {
+        const refs = await prisma.faceRef.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          take: 4,
+        });
+        const loaded: { base64: string; mimeType: string }[] = [];
+        for (const r of refs) {
+          const buf = await downloadFace(r.objectPath);
+          if (buf) loaded.push({ base64: buf.toString("base64"), mimeType: "image/png" });
+        }
+        if (loaded.length) args[0].model.faceRefs = loaded;
+      } catch (e) {
+        console.warn("[face refs] load failed", e);
+      }
+    }
 
     const startedAt = Date.now();
     try {
