@@ -116,6 +116,20 @@ const StudioApp: React.FC = () => {
     };
   }, []);
 
+  // OAuth bounced back with an error (e.g. a different / already-existing account)
+  // → show a friendly message instead of a blank page, then clean the URL.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URL(window.location.href).searchParams;
+    if (params.get('auth_error') || params.get('error')) {
+      setAuthModal('fallback');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('auth_error');
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
   if (isAuthChecking || !userState) {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center">

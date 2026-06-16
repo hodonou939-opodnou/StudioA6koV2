@@ -7,10 +7,17 @@ import { claimAnonymousCredits } from "./credits";
 
 // Public "A6" + 4-char id, generated at first visit (every new user, incl. anonymous).
 function genShortId(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I
-  let s = "A6";
-  for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no ambiguous O/I
+  const digits = "23456789"; // no ambiguous 0/1
+  const all = letters + digits;
+  const pick = (set: string) => set[Math.floor(Math.random() * set.length)];
+  // 4-char suffix guaranteed to mix BOTH letters and digits, then shuffled.
+  const out = [pick(letters), pick(digits), pick(all), pick(all)];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return "A6" + out.join("");
 }
 
 export const auth = betterAuth({

@@ -201,8 +201,8 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
               </p>
             </div>
 
-            {/* Google Profile Badge if authenticated */}
-            {userState.displayName && (
+            {/* Profile badge — only for real (SSO) accounts, never for anonymous guests */}
+            {!isGuest && userState.displayName && (
               <div className="flex items-center gap-3 bg-brand-bg/45 p-3 rounded-2xl border border-brand-secondary/15 shrink-0 hover:border-brand-primary/25 transition-colors self-start sm:self-center">
                 <img 
                   src={userState.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userState.userId}`} 

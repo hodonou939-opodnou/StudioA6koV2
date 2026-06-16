@@ -65,58 +65,69 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
     }).catch(() => {});
   };
 
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isFRlang = T.language === 'fr' || T.directorId === 'ID Directeur';
+
+  // Fetch the asset bytes once as a File + object URL (reused by download & share).
+  const buildFile = async (): Promise<{ file: File; objectUrl: string } | null> => {
+    const isImage = asset.type === 'image';
+    const fetchUrl = asset.url.startsWith('data:')
+      ? asset.url
+      : asset.base64 ? `data:image/png;base64,${asset.base64}` : asset.url;
+    const resp = await fetch(fetchUrl);
+    const blob = await resp.blob();
+    const name = `Studio_a6ko_${asset.id || Date.now()}.${isImage ? 'png' : 'mp4'}`;
+    const file = new File([blob], name, { type: blob.type || (isImage ? 'image/png' : 'video/mp4') });
+    return { file, objectUrl: URL.createObjectURL(blob) };
+  };
+
   const handleDownload = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
     setDownloadSuccess('');
+    const successText = isFRlang ? "Téléchargé avec succès !" : "Downloaded successfully!";
     try {
-      let downloadUrl = asset.url;
-      let shouldRevoke = false;
+      const built = await buildFile();
+      if (!built) throw new Error('no-asset');
+      const { file, objectUrl } = built;
 
-      // Extract high resolution data or custom base64
-      if (asset.type === 'image' && (asset.url.startsWith('data:') || asset.base64)) {
-        const fetchUrl = asset.url.startsWith('data:') ? asset.url : `data:image/png;base64,${asset.base64}`;
-        const response = await fetch(fetchUrl);
-        const blob = await response.blob();
-        downloadUrl = URL.createObjectURL(blob);
-        shouldRevoke = true;
+      // Mobile: the system share sheet exposes "Save Image"/save-to-Photos — the only
+      // reliable way to save on iOS Safari (the <a download> attribute is ignored there).
+      if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          sendFeedback('DOWNLOAD'); publishToGallery();
+          URL.revokeObjectURL(objectUrl);
+          setIsDownloading(false);
+          return;
+        } catch {
+          /* user dismissed → fall through to open/anchor */
+        }
       }
 
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      const isImage = asset.type === 'image';
-      const extension = isImage ? 'png' : 'mp4';
-      link.download = `Studio_a6ko_${asset.id || Date.now()}.${extension}`;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Instantly trigger and display standard Success toast directly on phone/desktop
-      const successText = T.language === 'fr' || T.directorId === 'ID Directeur'
-        ? "Téléchargé avec succès !" 
-        : "Downloaded successfully!";
+      if (isMobile) {
+        // Open full-size in a new tab so the user can long-press → Save Image.
+        window.open(objectUrl, '_blank');
+      } else {
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
       setDownloadSuccess(successText);
       setTimeout(() => setDownloadSuccess(''), 4000);
-      sendFeedback('DOWNLOAD'); // strongest "I like this result" signal
-      publishToGallery();       // feature free-tier creations as social proof
-
-      if (shouldRevoke) {
-        setTimeout(() => URL.revokeObjectURL(downloadUrl), 3000);
-      }
+      sendFeedback('DOWNLOAD');
+      publishToGallery();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
     } catch (e) {
-      console.error("Failed to download asset:", e);
-      // Direct escape fallback
+      console.error("Download failed:", e);
       try {
         window.open(asset.url, '_blank');
-        const successText = T.language === 'fr' || T.directorId === 'ID Directeur'
-          ? "Téléchargé avec succès !" 
-          : "Downloaded successfully!";
         setDownloadSuccess(successText);
         setTimeout(() => setDownloadSuccess(''), 4000);
-      } catch (err) {
-        console.error("Window open fallback failed:", err);
-      }
+      } catch {}
     } finally {
       setIsDownloading(false);
     }
@@ -146,46 +157,46 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
       }
   };
 
-  const handleShare = () => {
-    sendFeedback('SHARE'); // intent-to-share is a strong positive signal
+  // Short, engaging default share message + the canonical link.
+  const shareMessage = isFRlang
+    ? "Regarde ma création réalisée avec Studio A6ko ✨ https://studio.a6ko.com"
+    : "Check out what I made with Studio A6ko ✨ https://studio.a6ko.com";
+  const shareLink = "https://studio.a6ko.com";
+
+  const handleShare = async () => {
+    sendFeedback('SHARE');
+    // Mobile: open the system share sheet directly with the real image + message.
+    // It lists every installed app (Instagram, TikTok, WhatsApp…) and shares the
+    // actual picture — the natural path, no extra instructions needed.
+    if (isMobile && navigator.share) {
+      try {
+        const built = await buildFile();
+        if (built && navigator.canShare && navigator.canShare({ files: [built.file] })) {
+          await navigator.share({ title: 'Studio A6ko', text: shareMessage, files: [built.file] });
+          URL.revokeObjectURL(built.objectUrl);
+          return;
+        }
+        await navigator.share({ title: 'Studio A6ko', text: shareMessage, url: shareLink });
+        return;
+      } catch {
+        /* dismissed/unsupported → fall back to the on-screen buttons */
+      }
+    }
     setIsShareAssistOpen(true);
     setActiveShareChannel(null);
   };
 
   const executeNativeShareSheet = async () => {
-    const shareText = T.whatsappShareMessage;
-    const imageUrl = asset.url;
-    const shareUrl = `https://studio.a6ko.com/share?img=${encodeURIComponent(imageUrl)}`;
-    if (navigator.share) {
-        try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const file = new File([blob], `studio-a6ko-${asset.id}.png`, { type: blob.type });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    title: 'Studio a6ko',
-                    text: shareText,
-                    files: [file]
-                });
-            } else {
-                await navigator.share({
-                    title: 'Studio a6ko',
-                    text: shareText,
-                    url: shareUrl
-                });
-            }
-        } catch (err) {
-            console.warn("Navigator share failed, using fallback URL share.", err);
-            try {
-                await navigator.share({
-                    title: 'Studio a6ko',
-                    text: shareText,
-                    url: shareUrl
-                });
-            } catch (fallbackErr) {
-                console.error("Native share sheet failed completely:", fallbackErr);
-            }
-        }
+    try {
+      const built = await buildFile();
+      if (built && navigator.canShare && navigator.canShare({ files: [built.file] })) {
+        await navigator.share({ title: 'Studio A6ko', text: shareMessage, files: [built.file] });
+        URL.revokeObjectURL(built.objectUrl);
+        return;
+      }
+      if (navigator.share) await navigator.share({ title: 'Studio A6ko', text: shareMessage, url: shareLink });
+    } catch (err) {
+      console.warn("Native share failed", err);
     }
   };
 
@@ -436,25 +447,10 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
                   </div>
 
                   {/* Core Social Buttons Grid */}
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {/* WhatsApp */}
                     <button
-                      onClick={() => {
-                        const shareText = T.whatsappShareMessage;
-                        const shareUrl = `https://studio.a6ko.com/share?img=${encodeURIComponent(asset.url)}`;
-                        const encodedText = encodeURIComponent(`${shareText}${shareUrl}`);
-                        
-                        // Try opening native client app scheme
-                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                        if (isMobile) {
-                          window.location.href = `whatsapp://send?text=${encodedText}`;
-                          setTimeout(() => {
-                            window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
-                          }, 800);
-                        } else {
-                          window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
-                        }
-                      }}
+                      onClick={() => window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`, '_blank')}
                       className="aspect-square bg-green-500 hover:bg-green-600 text-white rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md shadow-green-500/10 cursor-pointer text-[9px] font-black uppercase tracking-wider py-2"
                     >
                       <svg className="w-5 h-5 fill-current mb-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -465,18 +461,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
 
                     {/* Facebook */}
                     <button
-                      onClick={() => {
-                        const shareUrl = `https://studio.a6ko.com/share?img=${encodeURIComponent(asset.url)}`;
-                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                        if (isMobile) {
-                          window.location.href = `fb://sharer?u=${encodeURIComponent(shareUrl)}`;
-                          setTimeout(() => {
-                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-                          }, 800);
-                        } else {
-                          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-                        }
-                      }}
+                      onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`, '_blank')}
                       className="aspect-square bg-blue-600 hover:bg-blue-700 text-white rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md shadow-blue-600/10 cursor-pointer text-[9px] font-black uppercase tracking-wider py-2"
                     >
                       <svg className="w-5 h-5 fill-current mb-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -485,28 +470,15 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
                       FB
                     </button>
 
-                    {/* Instagram */}
+                    {/* X (Twitter) */}
                     <button
-                      onClick={() => setActiveShareChannel('instagram')}
-                      className="aspect-square bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 text-white rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md complex-glow cursor-pointer text-[9px] font-black uppercase tracking-wider py-2"
+                      onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}`, '_blank')}
+                      className="aspect-square bg-black hover:bg-neutral-800 text-white rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer text-[9px] font-black uppercase tracking-wider py-2"
                     >
-                      <svg className="w-5 h-5 fill-none stroke-current stroke-[2.2] mb-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                      <svg className="w-5 h-5 fill-current mb-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                       </svg>
-                      Insta
-                    </button>
-
-                    {/* TikTok */}
-                    <button
-                      onClick={() => setActiveShareChannel('tiktok')}
-                      className="aspect-square bg-black border border-neutral-800 text-white rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-md shadow-black/10 cursor-pointer text-[9px] font-black uppercase tracking-wider py-2"
-                    >
-                      <svg className="w-5 h-5 fill-current mb-0.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.85.99 2 1.69 3.26 2.02v3.91c-1.12-.13-2.22-.55-3.17-1.19-.89-.59-1.63-1.42-2.11-2.39H16v11.83c0 2-.85 3.89-2.33 5.12-1.74 1.43-4.14 1.94-6.34 1.34-2.4-.63-4.38-2.61-4.99-5.01-.84-3.18 1.13-6.49 4.34-7.23 1.15-.27 2.37-.15 3.45.34v3.98c-.73-.39-1.58-.51-2.39-.32-1.19.27-2.07 1.33-2.12 2.56-.05 1.74 1.51 3.19 3.25 2.92 1.25-.19 2.13-1.25 2.13-2.52V.02z"/>
-                      </svg>
-                      TikTok
+                      X
                     </button>
                   </div>
 
@@ -524,7 +496,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
 
                     <button
                       onClick={() => {
-                        const shareUrl = `https://studio.a6ko.com/share?img=${encodeURIComponent(asset.url)}`;
+                        const shareUrl = shareLink;
                         navigator.clipboard.writeText(shareUrl).then(() => {
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2000);

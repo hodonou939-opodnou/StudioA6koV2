@@ -65,7 +65,7 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
         {/* Backdrop overlay */}
         <motion.div
           id="try-free-backdrop"
@@ -83,7 +83,7 @@ export const TryFreeModal: React.FC<TryFreeModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="relative bg-brand-bg border border-brand-secondary/30 rounded-[2.5rem] p-6 sm:p-10 w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col gap-6 md:gap-8 active:scale-100"
+          className="relative bg-brand-bg border border-brand-secondary/30 rounded-[2.5rem] p-6 sm:p-10 w-full max-w-2xl max-h-[92vh] overflow-y-auto overflow-x-hidden my-auto shadow-2xl flex flex-col gap-6 md:gap-8 active:scale-100"
         >
           {/* Futuristic ambient vector glow in background */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-brand-primary/10 rounded-full blur-[100px] pointer-events-none -z-10" />
