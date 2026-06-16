@@ -448,7 +448,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
             </a>
         </div>
 
-        <Section title={T.model} defaultOpen={!isMobile}>
+        <Section title={T.language === 'fr' ? 'Ou télécharge ta photo pour commencer' : 'Or upload your photo to start'} defaultOpen={!isMobile}>
             <div className="mt-2">
             {options.model.image ? (
               <div className="flex items-center gap-4 p-3 bg-brand-surface/50 rounded-2xl border border-brand-primary/20 animate-in zoom-in-95 duration-300">
@@ -491,7 +491,21 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
             {modelUploadError && (
               <p className="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-wider pl-1">{modelUploadError}</p>
             )}
-            
+
+            {!options.model.image && (
+              <div className="mt-3 flex items-start gap-3 bg-brand-bg/40 border border-brand-secondary/20 rounded-2xl p-3">
+                <div className="w-11 h-14 rounded-lg bg-gradient-to-b from-brand-primary/15 to-brand-secondary/25 flex items-center justify-center text-2xl shrink-0">🧑</div>
+                <div>
+                  <p className="text-[10px] font-black text-brand-text/70 uppercase tracking-wider mb-1">{T.language === 'fr' ? 'Photo idéale' : 'Ideal photo'}</p>
+                  <ul className="text-[11px] text-brand-text-secondary space-y-0.5 leading-snug">
+                    <li>✅ {T.language === 'fr' ? 'Visage de face, bien éclairé' : 'Face forward, well lit'}</li>
+                    <li>✅ {T.language === 'fr' ? 'Tête et épaules visibles' : 'Head & shoulders visible'}</li>
+                    <li>🚫 {T.language === 'fr' ? 'Ni lunettes de soleil ni chapeau' : 'No sunglasses or hat'}</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             {!options.model.image && recentModels.length > 0 && (
               <div className="mt-4">
                 <p className="text-[10px] font-bold text-brand-text/50 uppercase tracking-wider mb-2 pl-1">{T.recentModels}</p>

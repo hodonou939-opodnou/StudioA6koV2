@@ -1,20 +1,48 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FaceCaptureModal } from "./FaceCaptureModal";
 
 type Ref = { id: string; angle: string; url: string };
 
 // Optional "boost face accuracy" card. Logged-in users capture their face under a
 // few angles once; it persists on the account and auto-applies to every creation.
+// onSubjectReady: emits the front captured face so the studio can use it AS the
+// subject photo (only if the user hasn't uploaded one) — "capture = subject".
 export const FaceProfileCard: React.FC<{
   isFR: boolean;
   isGuest?: boolean;
   onRequireLogin?: () => void;
-}> = ({ isFR, isGuest, onRequireLogin }) => {
+  onSubjectReady?: (img: { base64: string; mimeType: string }) => void;
+}> = ({ isFR, isGuest, onRequireLogin, onSubjectReady }) => {
   const [refs, setRefs] = useState<Ref[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const sentRef = useRef<string | null>(null);
+
+  // When a face is saved, hand the front angle to the studio as the subject photo.
+  useEffect(() => {
+    if (!onSubjectReady || refs.length === 0) return;
+    const front = refs.find((r) => r.angle === "front") || refs[0];
+    if (sentRef.current === front.id) return;
+    sentRef.current = front.id;
+    fetch(front.url)
+      .then((r) => r.blob())
+      .then(
+        (blob) =>
+          new Promise<string>((res, rej) => {
+            const fr = new FileReader();
+            fr.onload = () => res(String(fr.result));
+            fr.onerror = rej;
+            fr.readAsDataURL(blob);
+          }),
+      )
+      .then((dataUrl) => {
+        const m = dataUrl.match(/^data:(.*?);base64,(.*)$/);
+        if (m) onSubjectReady({ base64: m[2], mimeType: m[1] || "image/jpeg" });
+      })
+      .catch(() => {});
+  }, [refs, onSubjectReady]);
 
   const load = useCallback(() => {
     if (isGuest) {

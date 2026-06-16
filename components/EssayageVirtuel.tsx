@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Icon } from './Icon';
 import { LoadingSpinner } from './LoadingSpinner';
 import { generateFashionShoot, generateShopInfo } from '../services/geminiService';
+import { FaceProfileCard } from './FaceProfileCard';
 import { getRecentModels, addRecentModel, getRecentGarments, addRecentGarment, RecentImage } from '../utils/recentUploads';
 import { get, set } from 'idb-keyval';
 import { textContent, BACKUP_API_KEYS, WHATSAPP_SUPPORT_LINK } from '../constants';
@@ -443,11 +444,19 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                 
                 {/* Configuration Panel - Left Column */}
                 <div className="lg:col-span-5 bg-brand-surface border border-brand-secondary/30 rounded-3xl p-6 shadow-xl space-y-6">
-                    
+
+                    {/* Face accuracy booster — capture = subject (only fills if no photo uploaded) */}
+                    <FaceProfileCard
+                      isFR={language === 'fr'}
+                      isGuest={isGuest}
+                      onRequireLogin={onRequireLogin}
+                      onSubjectReady={(img) => setModelImage((prev) => (prev ? prev : img))}
+                    />
+
                     {/* Step 1: Upload User Model Image */}
                     <div>
                         <label className="block text-xs font-black text-brand-text/85 uppercase tracking-widest mb-3">
-                            {language === 'en' ? 'Step 1: Upload your own photo or a model photo (Must have right of use)' : "Étape 1 : Télécharger votre propre photo ou la photo d'un mannequin (Ayez le droit d'utilisation obligatoire)"}
+                            {language === 'en' ? 'Or upload your own photo or a model photo (you must have usage rights)' : "Ou télécharge ta photo (ou celle d'un mannequin — droit d'utilisation obligatoire)"}
                         </label>
                         
                         {modelImage ? (
