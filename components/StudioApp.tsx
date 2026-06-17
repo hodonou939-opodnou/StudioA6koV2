@@ -130,6 +130,15 @@ const StudioApp: React.FC = () => {
     }
   }, []);
 
+  // If a guest started a face capture and had to log in, bring them to the
+  // account page on return — the face card there auto-resumes the capture.
+  useEffect(() => {
+    if (isGuest) return;
+    if (typeof window !== 'undefined' && sessionStorage.getItem('a6ko_capture_after_login')) {
+      setActiveTab('account');
+    }
+  }, [isGuest]);
+
   if (isAuthChecking || !userState) {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center">

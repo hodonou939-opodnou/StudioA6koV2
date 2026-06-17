@@ -1,29 +1,27 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = {
   isFR: boolean;
-  startAngle?: "front" | "left" | "right" | "extra";
   onClose: () => void;
   onSaved: () => void;
 };
 
-const FULL_STEPS = [
-  { angle: "front", fr: "Regardez droit devant 🙂", en: "Look straight ahead 🙂" },
-  { angle: "left", fr: "Tournez doucement la tête à gauche ⬅️", en: "Turn your head slightly left ⬅️" },
-  { angle: "right", fr: "Tournez doucement la tête à droite ➡️", en: "Turn your head slightly right ➡️" },
+// 4 guided angles for solid 3D facial morphology.
+const STEPS = [
+  { angle: "front", fr: "Regardez droit dans la caméra 🙂", en: "Look straight into the camera 🙂" },
+  { angle: "left", fr: "Tournez légèrement la tête à gauche ⬅️", en: "Turn your head slightly left ⬅️" },
+  { angle: "right", fr: "Tournez légèrement la tête à droite ➡️", en: "Turn your head slightly right ➡️" },
+  { angle: "up", fr: "Relevez légèrement le menton ⬆️", en: "Lift your chin slightly ⬆️" },
 ] as const;
 
-// Guided multi-angle face capture: wide live preview + hands-free countdown
-// auto-capture (so you can hold the left/right pose). Photo-upload fallback when
-// the live camera is blocked (some in-app browsers).
-export const FaceCaptureModal: React.FC<Props> = ({ isFR, startAngle, onClose, onSaved }) => {
+// Guided multi-angle face capture: wide live preview + hands-free 3-2-1 countdown
+// auto-capture (hold the pose). Photo-upload fallback when the camera is blocked.
+export const FaceCaptureModal: React.FC<Props> = ({ isFR, onClose, onSaved }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // "extra" = adding a single bonus angle; otherwise run the 3-step guided flow.
-  const steps = startAngle === "extra" ? [{ angle: "extra", fr: "Cadrez votre visage", en: "Frame your face" }] : FULL_STEPS;
   const [stepIdx, setStepIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [camError, setCamError] = useState(false);
@@ -31,7 +29,11 @@ export const FaceCaptureModal: React.FC<Props> = ({ isFR, startAngle, onClose, o
   const [countdown, setCountdown] = useState<number | null>(null);
   const [flash, setFlash] = useState(false);
 
-  const step = steps[stepIdx];
+  const step = STEPS[stepIdx];
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+  }, []);
 
   // Start the camera once.
   useEffect(() => {
@@ -62,69 +64,49 @@ export const FaceCaptureModal: React.FC<Props> = ({ isFR, startAngle, onClose, o
     };
   }, []);
 
-  // Hands-free countdown → auto-capture, restarted for each step.
-  useEffect(() => {
-    if (!ready || camError || busy) return;
-    setCountdown(3);
-    const iv = setInterval(() => {
-      setCountdown((c) => {
-        if (c === null) return null;
-        if (c <= 1) {
-          clearInterval(iv);
-          void captureFromVideo();
-          return null;
+  const saveBase64 = useCallback(
+    async (base64: string) => {
+      setBusy(true);
+      setCountdown(null);
+      try {
+        const res = await fetch("/api/face", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, angle: step.angle }),
+        });
+        if (res.status === 401) {
+          alert(isFR ? "Connectez-vous d'abord pour enregistrer votre visage." : "Please sign in first to save your face.");
+          return;
         }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, stepIdx, camError]);
-
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-  }
-
-  async function saveBase64(base64: string) {
-    setBusy(true);
-    setCountdown(null);
-    try {
-      const res = await fetch("/api/face", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base64, angle: step.angle }),
-      });
-      if (res.status === 401) {
-        alert(isFR ? "Connectez-vous d'abord pour enregistrer votre visage." : "Please sign in first to save your face.");
-        return;
+        if (res.status === 409) {
+          // Max reached — treat as done.
+          onSaved();
+          stopCamera();
+          onClose();
+          return;
+        }
+        if (!res.ok) throw new Error("save failed");
+        onSaved();
+        setFlash(true);
+        setTimeout(() => setFlash(false), 500);
+        setStepIdx((i) => {
+          if (i < STEPS.length - 1) return i + 1;
+          stopCamera();
+          onClose();
+          return i;
+        });
+      } catch {
+        alert(isFR ? "Échec de l'enregistrement. Réessayez." : "Save failed. Please try again.");
+      } finally {
+        setBusy(false);
       }
-      if (res.status === 409) {
-        alert(isFR ? "Maximum d'angles atteint. Supprimez-en un d'abord." : "Max angles reached. Remove one first.");
-        stopCamera();
-        onClose();
-        return;
-      }
-      if (!res.ok) throw new Error("save failed");
-      onSaved();
-      setFlash(true);
-      setTimeout(() => setFlash(false), 600);
-      if (stepIdx < steps.length - 1) {
-        setStepIdx(stepIdx + 1);
-      } else {
-        stopCamera();
-        onClose();
-      }
-    } catch {
-      alert(isFR ? "Échec de l'enregistrement. Réessayez." : "Save failed. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+    [step.angle, isFR, onSaved, onClose, stopCamera],
+  );
 
-  async function captureFromVideo() {
+  const captureFromVideo = useCallback(async () => {
     const v = videoRef.current;
-    if (!v || busy || !v.videoWidth) return;
-    // Capture the full wide frame (capped to 1024 on the long side) — not a tight crop.
+    if (!v || !v.videoWidth) return;
     const scale = Math.min(1, 1024 / Math.max(v.videoWidth, v.videoHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(v.videoWidth * scale);
@@ -133,7 +115,26 @@ export const FaceCaptureModal: React.FC<Props> = ({ isFR, startAngle, onClose, o
     if (!ctx) return;
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
     await saveBase64(canvas.toDataURL("image/jpeg", 0.92));
-  }
+  }, [saveBase64]);
+
+  // Hands-free countdown → auto-capture. Capture is fired from the interval
+  // callback (NEVER inside a setState updater — that crashes React 19).
+  useEffect(() => {
+    if (!ready || camError || busy) return;
+    let n = 3;
+    setCountdown(n);
+    const iv = setInterval(() => {
+      n -= 1;
+      if (n <= 0) {
+        clearInterval(iv);
+        setCountdown(null);
+        void captureFromVideo();
+      } else {
+        setCountdown(n);
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [ready, stepIdx, camError, busy, captureFromVideo]);
 
   function onFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -149,30 +150,35 @@ export const FaceCaptureModal: React.FC<Props> = ({ isFR, startAngle, onClose, o
         <div className="p-5 sm:p-6">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">
-              {isFR ? "Capture du visage" : "Face capture"} · {stepIdx + 1}/{steps.length}
+              {isFR ? "Capture du visage" : "Face capture"} · {stepIdx + 1}/{STEPS.length}
             </span>
             <button onClick={() => { stopCamera(); onClose(); }} className="text-brand-text-secondary hover:text-brand-text text-xs font-bold uppercase">
               {isFR ? "Fermer" : "Close"}
             </button>
           </div>
 
+          {/* Progress dots */}
+          <div className="flex justify-center gap-1.5 mb-3">
+            {STEPS.map((_, i) => (
+              <span key={i} className={`h-1.5 rounded-full transition-all ${i < stepIdx ? "w-6 bg-brand-primary" : i === stepIdx ? "w-6 bg-brand-primary/60" : "w-1.5 bg-brand-secondary/40"}`} />
+            ))}
+          </div>
+
           <h3 className="text-base sm:text-lg font-black text-brand-text mb-3 text-center">{isFR ? step.fr : step.en}</h3>
 
-          <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-brand-bg mb-4 border border-brand-secondary/30">
+          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-brand-bg mb-4 border border-brand-secondary/30">
             {!camError ? (
               <>
                 <video ref={videoRef} muted playsInline className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
-                {/* Soft oval guide (wide) */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-[68%] h-[82%] rounded-[50%] border-2 border-white/70" />
+                  <div className="w-[60%] h-[88%] rounded-[50%] border-2 border-white/70" />
                 </div>
-                {/* Countdown */}
                 {countdown !== null && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-white text-7xl font-black drop-shadow-lg animate-pulse">{countdown}</span>
+                    <span className="text-white text-7xl font-black drop-shadow-lg">{countdown}</span>
                   </div>
                 )}
-                {flash && <div className="absolute inset-0 bg-white/80 animate-pulse" />}
+                {flash && <div className="absolute inset-0 bg-white/80" />}
               </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center gap-3">
@@ -200,7 +206,7 @@ export const FaceCaptureModal: React.FC<Props> = ({ isFR, startAngle, onClose, o
 
           <p className="text-[11px] text-brand-text-secondary mt-3 text-center">
             {isFR
-              ? "Capture automatique après le compte à rebours. Tenez la pose. Vos photos restent privées."
+              ? "Capture automatique après le compte à rebours — tenez la pose. Vos photos restent privées."
               : "Auto-captures after the countdown — just hold the pose. Your photos stay private."}
           </p>
         </div>

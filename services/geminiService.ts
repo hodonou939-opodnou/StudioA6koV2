@@ -1669,12 +1669,13 @@ async function generateFashionImageOpenAI(
         }),
       ),
   );
+  // NOTE: gpt-image-* always return b64_json and REJECT the `response_format`
+  // param (that's dall-e only) — passing it returns a 400. Do not add it back.
   const res = await client.images.edit({
     model,
     image: refs as any,
     prompt,
     size: mapAspectToOpenAISize(aspectRatio),
-    response_format: 'b64_json',
   } as any);
   const b64 = res.data?.[0]?.b64_json;
   if (!b64) throw new Error('OPENAI_NO_IMAGE');
