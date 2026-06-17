@@ -15,11 +15,18 @@ export const FaceProfileCard: React.FC<{
   isGuest?: boolean;
   onRequireLogin?: () => void;
   onSubjectReady?: (img: { base64: string; mimeType: string }) => void;
-}> = ({ isFR, isGuest, onRequireLogin, onSubjectReady }) => {
+  onHasFace?: (has: boolean) => void; // lets the studio relax the "upload required" gate
+}> = ({ isFR, isGuest, onRequireLogin, onSubjectReady, onHasFace }) => {
   const [refs, setRefs] = useState<Ref[]>([]);
   const [capturing, setCapturing] = useState(false);
   const [viewing, setViewing] = useState(false);
   const sentRef = useRef<string | null>(null);
+
+  // Tell the parent whether a saved face exists (so it can allow generation
+  // without an uploaded photo — the server will use the captured face).
+  useEffect(() => {
+    onHasFace?.(refs.length > 0);
+  }, [refs, onHasFace]);
 
   const load = useCallback(() => {
     if (isGuest) return;

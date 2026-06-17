@@ -181,7 +181,12 @@ export async function POST(req: NextRequest) {
           const buf = await downloadFace(r.objectPath);
           if (buf) loaded.push({ base64: buf.toString("base64"), mimeType: "image/png" });
         }
-        if (loaded.length) args[0].model.faceRefs = loaded;
+        if (loaded.length) {
+          args[0].model.faceRefs = loaded;
+          // Capture = subject: if the user didn't upload a photo, use their
+          // captured front face (first by createdAt) as the base subject image.
+          if (!args[0].model.image) args[0].model.image = loaded[0];
+        }
       } catch (e) {
         console.warn("[face refs] load failed", e);
       }

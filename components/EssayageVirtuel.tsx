@@ -55,6 +55,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
     
     // Core inputs state
     const [modelImage, setModelImage] = useState<{ base64: string, mimeType: string } | null>(null);
+    const [hasFace, setHasFace] = useState(false);
     const [modelFileName, setModelFileName] = useState<string>('');
     const [recentModels, setRecentModels] = useState<RecentImage[]>([]);
     
@@ -315,8 +316,10 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
     const handleRunTryOn = async () => {
         if (!userState) return;
 
-        if (!modelImage) {
-            setError(language === 'en' ? "Please upload your photo to try the garments on." : "Veuillez télécharger votre photo pour l'essayage.");
+        // A saved face capture counts as the subject (the server uses it) — only
+        // block when there is NEITHER a captured face NOR an uploaded photo.
+        if (!modelImage && !hasFace) {
+            setError(language === 'en' ? "Capture your face or upload a photo to try the garments on." : "Capturez votre visage ou téléchargez une photo pour l'essayage.");
             return;
         }
 
@@ -450,6 +453,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                       isFR={language === 'fr'}
                       isGuest={isGuest}
                       onRequireLogin={onRequireLogin}
+                      onHasFace={setHasFace}
                       onSubjectReady={(img) => setModelImage((prev) => (prev ? prev : img))}
                     />
 

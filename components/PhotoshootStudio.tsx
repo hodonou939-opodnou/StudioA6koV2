@@ -107,6 +107,7 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
   const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [results, setResults] = useState<Asset[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [hasFace, setHasFace] = useState(false);
   const [animationError, setAnimationError] = useState<string | null>(null);
   const [animatingAsset, setAnimatingAsset] = useState<Asset | null>(null);
   
@@ -276,8 +277,10 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
   const handleGenerate = useCallback(async (overrideVariants?: number | any) => {
     if (!userState) return;
 
-    if (!options.model.image) {
-        setError(language === 'en' ? "Please upload your photo." : "Veuillez télécharger votre photo.");
+    // A saved face capture counts as the subject (server uses it). Only block
+    // when there is NEITHER a captured face NOR an uploaded photo.
+    if (!options.model.image && !hasFace) {
+        setError(language === 'en' ? "Capture your face or upload a photo." : "Capturez votre visage ou téléchargez une photo.");
         return;
     }
 
@@ -583,6 +586,7 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
               isFR={language === 'fr'}
               isGuest={isGuest}
               onRequireLogin={onRequireLogin}
+              onHasFace={setHasFace}
               onSubjectReady={(img) =>
                 setOptions((prev) =>
                   prev.model.image
