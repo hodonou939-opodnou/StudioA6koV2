@@ -24,6 +24,10 @@ export async function initPayment(params: {
   customer: MonerooCustomer;
   metadata: { key: string; value: string }[];
 }): Promise<{ id: string; checkoutUrl: string }> {
+  // Moneroo expects metadata as an OBJECT ({k: v}), NOT an array — an array 422s.
+  const metaObj: Record<string, string> = {};
+  for (const m of params.metadata) metaObj[m.key] = m.value;
+
   const res = await fetch(`${BASE}/payments/initialize`, {
     method: "POST",
     headers: headers(),
@@ -33,7 +37,7 @@ export async function initPayment(params: {
       description: params.description,
       return_url: params.returnUrl,
       customer: params.customer,
-      metadata: params.metadata,
+      metadata: metaObj,
     }),
   });
   const json = await res.json();

@@ -66,6 +66,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   // Start the Moneroo checkout; credits are auto-granted by the verified webhook.
   const handlePay = async (packId: string) => {
+    // Open a tab synchronously on click (avoids popup blockers), then point it at
+    // the checkout — keeps the main app open so the user never leaves it.
+    const win = window.open('about:blank', '_blank');
     try {
       const res = await fetch('/api/payments/checkout', {
         method: 'POST',
@@ -74,13 +77,17 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+        if (win) win.location.href = data.checkoutUrl;
+        else window.location.href = data.checkoutUrl; // fallback if popup blocked
       } else if (res.status === 401) {
+        win?.close();
         onRequireLogin?.();
       } else {
+        win?.close();
         alert(isFR ? "Échec de l'ouverture du paiement. Réessayez." : 'Could not start payment. Please retry.');
       }
     } catch {
+      win?.close();
       alert(isFR ? 'Erreur réseau. Réessayez.' : 'Network error. Please retry.');
     }
   };

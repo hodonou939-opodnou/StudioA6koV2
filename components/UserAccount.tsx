@@ -32,10 +32,31 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
 
   const isFR = T.directorId === 'ID Directeur';
 
-  const handleLocalRecharge = () => {
-    const updated = { ...userState, credits: 3 };
-    setUserState(updated);
-    saveUserState(updated); // Sync to Firestore + localStorage
+  // Buy a pack via the dynamic Moneroo checkout (records a Payment so the webhook
+  // auto-grants credits) — opens in a new tab so the app stays open.
+  const handlePayPack = async (packId: string) => {
+    const win = window.open('about:blank', '_blank');
+    try {
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ packId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.checkoutUrl) {
+        if (win) win.location.href = data.checkoutUrl;
+        else window.location.href = data.checkoutUrl;
+      } else if (res.status === 401) {
+        win?.close();
+        onRequireLogin?.();
+      } else {
+        win?.close();
+        alert(isFR ? "Échec de l'ouverture du paiement. Réessayez." : 'Could not start payment. Please retry.');
+      }
+    } catch {
+      win?.close();
+      alert(isFR ? 'Erreur réseau. Réessayez.' : 'Network error. Please retry.');
+    }
   };
 
   const handleSignOut = async () => {
@@ -131,6 +152,7 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
       popular: false,
       badge: isFR ? 'Idéal Débutant' : 'Beginner Friendly',
       color: 'border-brand-secondary/35 bg-brand-surface/60 hover:border-brand-primary/35',
+      packId: 'discovery',
       paymentLink: 'https://pay.moneroo.io/plink_lghzrnpv16qt',
     },
     {
@@ -142,6 +164,7 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
       popular: true,
       badge: isFR ? 'Le plus populaire' : 'Most Popular',
       color: 'border-brand-primary bg-gradient-to-br from-brand-primary/5 via-brand-surface to-brand-primary/10 shadow-lg shadow-brand-primary/5 relative hover:border-brand-primary/80 ring-2 ring-brand-primary/20',
+      packId: 'creator',
       paymentLink: 'https://pay.moneroo.io/plink_yii9m7nssk1h',
     },
     {
@@ -153,6 +176,7 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
       popular: false,
       badge: isFR ? 'Meilleur Rapport' : 'Best Value',
       color: 'border-emerald-500 bg-brand-surface/65 hover:border-emerald-400',
+      packId: 'studio',
       paymentLink: 'https://pay.moneroo.io/plink_3jy7yiy5a3cf',
     },
     {
@@ -164,6 +188,7 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
       popular: false,
       badge: isFR ? 'Mensuel sans limite' : 'Pro Subscription',
       color: 'border-purple-500 bg-gradient-to-br from-purple-500/5 via-brand-surface to-purple-500/10 hover:border-purple-400',
+      packId: 'pro',
       paymentLink: 'https://pay.moneroo.io/plink_ztqf2j02pjto',
     }
   ];
@@ -561,18 +586,17 @@ export const UserAccount: React.FC<UserAccountProps> = ({ userState, setUserStat
 
               {/* Action Button */}
               <div className="flex flex-col gap-2">
-                <a 
-                  href={`${pack.paymentLink}?reference=${userState.userId}`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={`w-full py-3 px-4 rounded-xl font-black uppercase tracking-wider text-xs transition-all text-center flex items-center justify-center gap-1.5 select-none ${
-                    pack.popular 
-                      ? 'bg-brand-primary text-white hover:bg-brand-primary/95 shadow-lg shadow-brand-primary/20 hover:scale-[1.02]' 
+                <button
+                  type="button"
+                  onClick={() => handlePayPack((pack as any).packId)}
+                  className={`w-full py-3 px-4 rounded-xl font-black uppercase tracking-wider text-xs transition-all text-center flex items-center justify-center gap-1.5 select-none cursor-pointer ${
+                    pack.popular
+                      ? 'bg-brand-primary text-white hover:bg-brand-primary/95 shadow-lg shadow-brand-primary/20 hover:scale-[1.02]'
                       : 'bg-brand-secondary text-brand-text hover:bg-brand-secondary/80 hover:text-brand-primary'
                   }`}
                 >
                   <span>🚀 {isFR ? 'Payer en ligne' : 'Pay Online'}</span>
-                </a>
+                </button>
                 
                 <a 
                   href={getWhatsAppUrl(pack.name.replace(/⭐|🏆|💜/g, '').trim(), pack.price, pack.credits)}

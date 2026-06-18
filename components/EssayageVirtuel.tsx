@@ -190,40 +190,42 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
         if (!tryOnResult || isDownloading) return;
         setIsDownloading(true);
         setDownloadSuccess('');
+        const successText = language === 'fr' ? "Téléchargé avec succès !" : "Downloaded successfully!";
         try {
-            const rawUrl = tryOnResult.url;
-            
-            // Check if it's already a data URL or can be constructed as one
-            const downloadUrl = (rawUrl.startsWith('data:') || !tryOnResult.base64) 
-                ? rawUrl 
-                : `data:image/png;base64,${tryOnResult.base64}`;
+            const dataUrl = tryOnResult.url.startsWith('data:')
+                ? tryOnResult.url
+                : tryOnResult.base64 ? `data:image/png;base64,${tryOnResult.base64}` : tryOnResult.url;
+            const resp = await fetch(dataUrl);
+            const blob = await resp.blob();
+            const file = new File([blob], `essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
+            const objectUrl = URL.createObjectURL(blob);
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = `essayage-${Date.now()}.png`;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Display success status text on screen
-            const successText = language === 'fr' 
-                ? "Téléchargé avec succès !" 
-                : "Downloaded successfully!";
+            // Mobile: the share sheet exposes "Save Image" — the reliable iOS path.
+            if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file] });
+                    URL.revokeObjectURL(objectUrl);
+                    setIsDownloading(false);
+                    return;
+                } catch { /* dismissed → fall through */ }
+            }
+            if (isMobile) {
+                window.open(objectUrl, '_blank'); // long-press → Save Image
+            } else {
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = file.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
             setDownloadSuccess(successText);
             setTimeout(() => setDownloadSuccess(''), 4000);
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
         } catch (e) {
-            console.error("Failed to download essayage asset:", e);
-            try {
-                window.open(tryOnResult.url, '_blank');
-                const successText = language === 'fr' 
-                    ? "Téléchargé avec succès !" 
-                    : "Downloaded successfully!";
-                setDownloadSuccess(successText);
-                setTimeout(() => setDownloadSuccess(''), 4000);
-            } catch (err) {
-                console.error("Window open fallback failed:", err);
-            }
+            console.error("Essayage download failed:", e);
+            try { window.open(tryOnResult.url, '_blank'); setDownloadSuccess(successText); setTimeout(() => setDownloadSuccess(''), 4000); } catch {}
         } finally {
             setIsDownloading(false);
         }
@@ -293,22 +295,29 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
 
     const handleShare = async () => {
         if (!tryOnResult) return;
-        
-        if (navigator.share) {
+        const msg = language === 'fr'
+            ? "Regarde mon essayage virtuel réalisé avec Studio A6ko ✨ https://studio.a6ko.com"
+            : "Check out my virtual try-on made with Studio A6ko ✨ https://studio.a6ko.com";
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile && navigator.share) {
             try {
-                await navigator.share({
-                    title: 'Studio a6ko - AI Try-On',
-                    text: language === 'en' 
-                        ? 'Check out my virtual try-on outfit designed using Studio a6ko\'s AI! 🚀' 
-                        : 'Regardez cet essayage virtuel fait en quelques secondes avec l\'IA de Studio a6ko ! 🚀',
-                    url: tryOnResult.url
-                });
+                const dataUrl = tryOnResult.url.startsWith('data:')
+                    ? tryOnResult.url
+                    : tryOnResult.base64 ? `data:image/png;base64,${tryOnResult.base64}` : tryOnResult.url;
+                const resp = await fetch(dataUrl);
+                const blob = await resp.blob();
+                const file = new File([blob], `essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ title: 'Studio A6ko', text: msg, files: [file] });
+                    return;
+                }
+                await navigator.share({ title: 'Studio A6ko', text: msg, url: 'https://studio.a6ko.com' });
                 return;
             } catch (err) {
-                console.log("Native share failed or dismissed", err);
+                console.log("Native share dismissed", err);
             }
         }
-        
         setIsShareOpen(!isShareOpen);
     };
 
@@ -381,19 +390,21 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                     image: garmentImage,
                 },
                 companion: { enabled: false, description: '', image: null },
-                pose: isSitting ? 'Sitting Pose' : (pose as any),
+                // High-class editorial look by default (no UI knob) — flattering
+                // cinematic light + analog film grain for maximum realism / less "AI look".
+                pose: (isSitting ? 'Sitting Pose' : 'Editorial') as any,
                 backgroundType: 'Solid Color' as any,
                 environment: environment as any,
                 colorPalette: 'Vibrant',
                 cameraAngle: 'Eye Level' as any,
                 cameraAxis: 'Front' as any,
                 cameraDistance: 'Full Body' as any,
-                cameraLens: '50mm (Natural)' as any,
+                cameraLens: '85mm (Portrait/Bokeh)' as any,
                 lightingSetup: 'Rembrandt' as any,
                 lightingTemperature: 'Neutral (5500K)' as any,
-                lightingTime: 'Harsh Midday' as any,
-                lightingMood: 'Clinical & Sharp' as any,
-                filmGrain: 'Crisp Digital' as any,
+                lightingTime: 'Golden Hour' as any,
+                lightingMood: 'Soft & Flattering' as any,
+                filmGrain: 'Analog Film' as any,
                 postProcessing: 'Vibrant Colors' as any,
                 tattoos: 'none' as any,
                 accessories: { shoes: '', watch: '', jewelry: '', other: '' },
