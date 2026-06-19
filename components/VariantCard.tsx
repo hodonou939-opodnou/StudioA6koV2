@@ -165,22 +165,18 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
 
   const handleShare = async () => {
     sendFeedback('SHARE');
-    // Mobile: open the system share sheet directly with the real image + message.
-    // It lists every installed app (Instagram, TikTok, WhatsApp…) and shares the
-    // actual picture — the natural path, no extra instructions needed.
-    if (isMobile && navigator.share) {
-      try {
-        const built = await buildFile();
-        if (built && navigator.canShare && navigator.canShare({ files: [built.file] })) {
-          await navigator.share({ title: 'Studio A6ko', text: shareMessage, files: [built.file] });
-          URL.revokeObjectURL(built.objectUrl);
-          return;
-        }
-        await navigator.share({ title: 'Studio A6ko', text: shareMessage, url: shareLink });
+    // Share the ACTUAL generated image via the system share sheet — works on
+    // mobile AND Chrome/Edge desktop. (Link buttons can only attach a URL, not
+    // the image, so file-share is the only way to share the real picture.)
+    try {
+      const built = await buildFile();
+      if (built && navigator.canShare && navigator.canShare({ files: [built.file] })) {
+        await navigator.share({ title: 'Studio A6ko', text: shareMessage, files: [built.file] });
+        URL.revokeObjectURL(built.objectUrl);
         return;
-      } catch {
-        /* dismissed/unsupported → fall back to the on-screen buttons */
       }
+    } catch {
+      /* dismissed or unsupported → fall back to the on-screen link buttons */
     }
     setIsShareAssistOpen(true);
     setActiveShareChannel(null);

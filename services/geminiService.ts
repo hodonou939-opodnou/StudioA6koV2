@@ -1662,7 +1662,9 @@ async function generateFashionImageOpenAI(
   imageParts: any[],
 ): Promise<string> {
   const { default: OpenAI, toFile } = await import('openai');
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  // "Premature close" = the connection to OpenAI dropped mid-request (transient).
+  // A long timeout + a few automatic retries makes the call survive those drops.
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 180000, maxRetries: 3 });
   const model = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2';
   const refs = await Promise.all(
     imageParts
@@ -1793,11 +1795,14 @@ export const generateFashionShoot = async (
                         aspectRatio: finalOptions.aspectRatio,
                     },
                 });
+                continue; // OpenAI succeeded — next variant
             } catch (err) {
-                console.error(`OpenAI variant ${index + 1} failed`, err);
-                results.push({ error: err });
+                // ChatGPT image failed (e.g. "Premature close"). Don't fail the
+                // variant — fall through to the Gemini model loop below so the
+                // user still gets an image instead of an error.
+                console.error(`OpenAI variant ${index + 1} failed, falling back to Gemini`, err);
+                onProgress(`Finishing variant ${index + 1}...`);
             }
-            continue; // skip the Gemini model loop for this variant
         }
 
         // Retry logic with fallback

@@ -298,25 +298,22 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
         const msg = language === 'fr'
             ? "Regarde mon essayage virtuel réalisé avec Studio A6ko ✨ https://studio.a6ko.com"
             : "Check out my virtual try-on made with Studio A6ko ✨ https://studio.a6ko.com";
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-        if (isMobile && navigator.share) {
-            try {
-                const dataUrl = tryOnResult.url.startsWith('data:')
-                    ? tryOnResult.url
-                    : tryOnResult.base64 ? `data:image/png;base64,${tryOnResult.base64}` : tryOnResult.url;
-                const resp = await fetch(dataUrl);
-                const blob = await resp.blob();
-                const file = new File([blob], `StudioA6ko-essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ title: 'Studio A6ko', text: msg, files: [file] });
-                    return;
-                }
-                await navigator.share({ title: 'Studio A6ko', text: msg, url: 'https://studio.a6ko.com' });
+        // Share the ACTUAL try-on image via the system share sheet — works on
+        // mobile AND Chrome/Edge desktop. Link buttons can only carry a URL, so
+        // file-share is the only way to send the real picture.
+        try {
+            const dataUrl = tryOnResult.url.startsWith('data:')
+                ? tryOnResult.url
+                : tryOnResult.base64 ? `data:image/png;base64,${tryOnResult.base64}` : tryOnResult.url;
+            const resp = await fetch(dataUrl);
+            const blob = await resp.blob();
+            const file = new File([blob], `StudioA6ko-essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ title: 'Studio A6ko', text: msg, files: [file] });
                 return;
-            } catch (err) {
-                console.log("Native share dismissed", err);
             }
+        } catch (err) {
+            console.log("Native share dismissed", err);
         }
         setIsShareOpen(!isShareOpen);
     };
