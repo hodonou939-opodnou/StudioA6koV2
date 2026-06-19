@@ -422,7 +422,14 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
             }
         } catch (err: any) {
             console.error("Try-on failed", err);
-            setError(err?.message || "Generation error. Please verify your connection and try again.");
+            const msg = String(err?.message || '');
+            // Auth / credit issues are handled globally (login popup / paywall) — don't
+            // also show a scary "contact support" message for those.
+            if (msg === 'AUTH_REQUIRED') {
+                setError(language === 'en' ? 'Please sign in, then capture your face (or upload a photo) and add a garment.' : "Connectez-vous, puis capturez votre visage (ou importez une photo) et ajoutez un vêtement.");
+            } else if (msg !== 'INSUFFICIENT_CREDITS') {
+                setError(err?.message || (language === 'en' ? "Generation error. Please verify your connection and try again." : "Erreur de génération. Vérifiez votre connexion et réessayez."));
+            }
             // Refund
             setUserState(prev => {
                 if (!prev) return prev;
