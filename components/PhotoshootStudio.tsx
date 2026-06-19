@@ -11,7 +11,7 @@ import { CreditConfirmModal } from './CreditConfirmModal';
 import { Icon } from './Icon';
 import type { GenerationOptions, Asset, AnimationOptions, UserState } from '../types';
 import { generateFashionShoot, animateImage, editGeneratedImage } from '../services/geminiService';
-import { textContent, BACKUP_API_KEYS, WHATSAPP_SUPPORT_LINK } from '../constants';
+import { textContent, BACKUP_API_KEYS, WHATSAPP_SUPPORT_LINK, buildSupportLink } from '../constants';
 import { GARMENT_PROMPTS } from '../garmentPrompts';
 import { getRandomDefaultModel } from '../defaultModel';
 import { isAdminUser, saveUserState } from '../utils/localStorage';
@@ -666,7 +666,7 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
                         <p className="text-sm leading-relaxed mb-6 whitespace-pre-line text-brand-text-secondary select-text">
                             {error}
                         </p>
-                        <a href={WHATSAPP_SUPPORT_LINK} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2.5 px-6 rounded hover:bg-green-700 transition-colors uppercase text-xs tracking-wider animate-bounce">
+                        <a href={buildSupportLink(userState?.userId, language === 'fr')} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2.5 px-6 rounded hover:bg-green-700 transition-colors uppercase text-xs tracking-wider animate-bounce">
                             {T.contactSupport}
                         </a>
                     </div>
@@ -682,7 +682,7 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
                         <p className="text-sm leading-relaxed mb-6 whitespace-pre-line text-brand-text-secondary select-text">
                             {animationError}
                         </p>
-                        <a href={WHATSAPP_SUPPORT_LINK} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2.5 px-6 rounded hover:bg-green-700 transition-colors uppercase text-xs tracking-wider">
+                        <a href={buildSupportLink(userState?.userId, language === 'fr')} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2.5 px-6 rounded hover:bg-green-700 transition-colors uppercase text-xs tracking-wider">
                             {T.contactSupport}
                         </a>
                     </div>

@@ -6,7 +6,7 @@ import { generateFashionShoot, generateShopInfo } from '../services/geminiServic
 import { FaceProfileCard } from './FaceProfileCard';
 import { getRecentModels, addRecentModel, getRecentGarments, addRecentGarment, RecentImage } from '../utils/recentUploads';
 import { get, set } from 'idb-keyval';
-import { textContent, BACKUP_API_KEYS, WHATSAPP_SUPPORT_LINK } from '../constants';
+import { textContent, BACKUP_API_KEYS, WHATSAPP_SUPPORT_LINK, buildSupportLink } from '../constants';
 import { PaywallModal } from './PaywallModal';
 import { GARMENT_PROMPTS } from '../garmentPrompts';
 import { isAdminUser, saveUserState, identifyUser } from '../utils/localStorage';
@@ -756,7 +756,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                                     </p>
                                 </div>
                                 <a 
-                                    href={WHATSAPP_SUPPORT_LINK} 
+                                    href={buildSupportLink(userState?.userId, language === 'fr')}
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white bg-green-600 hover:bg-green-700 rounded-xl transition duration-200 mt-0.5 shadow-md shadow-green-600/10 hover:shadow-green-700/20 active:scale-[0.98]"

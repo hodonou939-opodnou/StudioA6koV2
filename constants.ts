@@ -4,7 +4,15 @@ import type { TextContent } from './types';
 // This array must stay EMPTY — anything here is bundled into the public browser JS.
 export const BACKUP_API_KEYS: string[] = [];
 
-export const WHATSAPP_SUPPORT_LINK = "https://wa.me/message/WSPZORWPKM5HA1";
+export const WHATSAPP_SUPPORT_LINK = "https://wa.me/message/VJDW3IISAWAPM1";
+
+// Support link with a friendly pre-filled message (carries the user's A6 id).
+export function buildSupportLink(id?: string | null, isFR: boolean = true): string {
+  const msg = isFR
+    ? `Bonjour 👋, mon ID est ${id || "—"}. J'ai besoin d'assistance pour : `
+    : `Hi 👋, my ID is ${id || "—"}. I need help with: `;
+  return `${WHATSAPP_SUPPORT_LINK}?text=${encodeURIComponent(msg)}`;
+}
 
 export const textContent: TextContent = {
   en: {

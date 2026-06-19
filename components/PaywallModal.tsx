@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
-import { WHATSAPP_SUPPORT_LINK } from '../constants';
+import { WHATSAPP_SUPPORT_LINK, buildSupportLink } from '../constants';
 import { saveUserState } from '../utils/localStorage';
 import type { UserState } from '../types';
 
@@ -186,7 +186,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         {/* Support Direct Action */}
         <div className="px-6 pb-2 text-center">
           <a
-            href={WHATSAPP_SUPPORT_LINK}
+            href={buildSupportLink(userState?.userId, isFR)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold rounded-2xl transition-all"

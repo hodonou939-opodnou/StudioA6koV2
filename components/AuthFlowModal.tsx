@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { authClient, signIn } from "@/lib/auth-client";
-import { WHATSAPP_SUPPORT_LINK } from "../constants";
+import { buildSupportLink } from "../constants";
 
 export type AuthFlowMode = "login" | "blocked" | "fallback";
 
@@ -174,7 +174,7 @@ export const AuthFlowModal: React.FC<Props> = ({ mode, language, shortId, onClos
 
           {/* WhatsApp support — always available */}
           <a
-            href={WHATSAPP_SUPPORT_LINK}
+            href={buildSupportLink(shortId, isFR)}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold rounded-2xl transition-all"

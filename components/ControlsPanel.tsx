@@ -5,7 +5,7 @@ import { get, set } from 'idb-keyval';
 import { GARMENT_PROMPTS } from '../garmentPrompts';
 import { generateGarmentDescription } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileUtils';
-import { WHATSAPP_SUPPORT_LINK } from '../constants';
+import { WHATSAPP_SUPPORT_LINK, buildSupportLink } from '../constants';
 import { getRecentModels, getRecentGarments, addRecentModel, addRecentGarment, RecentImage } from '../utils/recentUploads';
 
 interface ControlsPanelProps {
@@ -1318,7 +1318,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                     {T.buyCredits}
                     </button>
                     <a 
-                    href={WHATSAPP_SUPPORT_LINK} 
+                    href={buildSupportLink(userState?.userId, T.language === 'fr')}
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="block w-full text-center text-brand-primary font-black uppercase tracking-widest text-[10px] py-2 hover:opacity-70 transition-opacity"
