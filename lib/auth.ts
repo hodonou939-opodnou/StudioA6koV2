@@ -30,6 +30,16 @@ export const auth = betterAuth({
     },
   },
 
+  // Let the same person sign in with EITHER Google or Facebook (same verified
+  // email) instead of failing with "account_not_linked". Both providers verify
+  // email, so linking by email is safe here.
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google", "facebook"],
+    },
+  },
+
   // Stamp every new user with their permanent A6 id at creation.
   databaseHooks: {
     user: {
@@ -84,9 +94,16 @@ export const auth = betterAuth({
 
 // Build only the social providers whose credentials exist.
 function buildSocialProviders() {
-  const p: Record<string, { clientId: string; clientSecret: string }> = {};
+  const p: Record<string, any> = {};
   if (process.env.GOOGLE_CLIENT_ID)
-    p.google = { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET! };
+    p.google = {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Always show the account chooser (many users have multiple Google accounts);
+      // request a refresh token so the session is durable.
+      prompt: "select_account",
+      accessType: "offline",
+    };
   if (process.env.APPLE_CLIENT_ID)
     p.apple = { clientId: process.env.APPLE_CLIENT_ID, clientSecret: process.env.APPLE_CLIENT_SECRET! };
   if (process.env.FACEBOOK_CLIENT_ID)
