@@ -197,7 +197,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                 : tryOnResult.base64 ? `data:image/png;base64,${tryOnResult.base64}` : tryOnResult.url;
             const resp = await fetch(dataUrl);
             const blob = await resp.blob();
-            const file = new File([blob], `essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
+            const file = new File([blob], `StudioA6ko-essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
             const objectUrl = URL.createObjectURL(blob);
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -307,7 +307,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                     : tryOnResult.base64 ? `data:image/png;base64,${tryOnResult.base64}` : tryOnResult.url;
                 const resp = await fetch(dataUrl);
                 const blob = await resp.blob();
-                const file = new File([blob], `essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
+                const file = new File([blob], `StudioA6ko-essayage-${Date.now()}.png`, { type: blob.type || 'image/png' });
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({ title: 'Studio A6ko', text: msg, files: [file] });
                     return;
@@ -407,7 +407,9 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                 filmGrain: 'Analog Film' as any,
                 postProcessing: 'Vibrant Colors' as any,
                 tattoos: 'none' as any,
-                accessories: { shoes: '', watch: '', jewelry: '', other: '' },
+                // Auto-style a tasteful wristwatch suited to the detected person &
+                // outfit (the image model infers gender/style) — no UI knob.
+                accessories: { shoes: '', watch: "an elegant, tasteful wristwatch that naturally suits the subject's gender and the outfit style", jewelry: '', other: '' },
                 variants: 1,
                 aspectRatio: tryOnAspectRatio,
                 watermark: false,
@@ -846,7 +848,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                                                         <motion.a
                                                             whileHover={{ scale: 1.15, y: -2 }}
                                                             whileTap={{ scale: 0.9 }}
-                                                            href={`https://api.whatsapp.com/send?text=${encodeURIComponent((language === 'en' ? "Try your models for free with Studio A6ko 📸✨\n" : "Essaie tes modeles gratuitement avec Studio A6ko 📸✨\n") + `https://studio.a6ko.com/share?img=${encodeURIComponent(tryOnResult.url)}`)}`}
+                                                            href={`https://api.whatsapp.com/send?text=${encodeURIComponent((language === 'en' ? "Check out my virtual try-on made with Studio A6ko ✨ " : "Regarde mon essayage virtuel réalisé avec Studio A6ko ✨ ") + "https://studio.a6ko.com")}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             onClick={() => setIsShareOpen(false)}
@@ -862,7 +864,7 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                                                         <motion.a
                                                             whileHover={{ scale: 1.15, y: -2 }}
                                                             whileTap={{ scale: 0.9 }}
-                                                            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://studio.a6ko.com/share?img=${encodeURIComponent(tryOnResult.url)}`)}`}
+                                                            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://studio.a6ko.com")}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             onClick={() => setIsShareOpen(false)}
@@ -874,37 +876,37 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                                                             </svg>
                                                         </motion.a>
 
-                                                        {/* Instagram */}
-                                                        <motion.button
+                                                        {/* X (Twitter) */}
+                                                        <motion.a
                                                             whileHover={{ scale: 1.15, y: -2 }}
                                                             whileTap={{ scale: 0.9 }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setActiveShareChannel('instagram');
-                                                            }}
-                                                            className="w-11 h-11 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 text-white rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer touch-manipulation"
-                                                            title="Instagram"
+                                                            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent((language === 'en' ? "Check out my virtual try-on made with Studio A6ko ✨ " : "Regarde mon essayage virtuel réalisé avec Studio A6ko ✨ ") + "https://studio.a6ko.com")}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={() => setIsShareOpen(false)}
+                                                            className="w-11 h-11 bg-black hover:bg-neutral-800 text-white rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer touch-manipulation"
+                                                            title="X"
                                                         >
-                                                            <svg className="w-6 h-6 fill-none stroke-current stroke-[2.5]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                                                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                                                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                                                            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                                                             </svg>
-                                                        </motion.button>
+                                                        </motion.a>
 
-                                                        {/* TikTok */}
+                                                        {/* Copy link */}
                                                         <motion.button
                                                             whileHover={{ scale: 1.15, y: -2 }}
                                                             whileTap={{ scale: 0.9 }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setActiveShareChannel('tiktok');
+                                                                navigator.clipboard?.writeText("https://studio.a6ko.com");
+                                                                setIsShareOpen(false);
                                                             }}
-                                                            className="w-11 h-11 bg-black hover:bg-neutral-900 border border-neutral-800 text-white rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer touch-manipulation"
-                                                            title="TikTok"
+                                                            className="w-11 h-11 bg-brand-bg border border-brand-secondary/30 text-brand-text hover:border-brand-primary rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer touch-manipulation"
+                                                            title="Copier le lien"
                                                         >
-                                                            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.85.99 2 1.69 3.26 2.02v3.91c-1.12-.13-2.22-.55-3.17-1.19-.89-.59-1.63-1.42-2.11-2.39H16v11.83c0 2-.85 3.89-2.33 5.12-1.74 1.43-4.14 1.94-6.34 1.34-2.4-.63-4.38-2.61-4.99-5.01-.84-3.18 1.13-6.49 4.34-7.23 1.15-.27 2.37-.15 3.45.34v3.98c-.73-.39-1.58-.51-2.39-.32-1.19.27-2.07 1.33-2.12 2.56-.05 1.74 1.51 3.19 3.25 2.92 1.25-.19 2.13-1.25 2.13-2.52V.02z"/>
+                                                            <svg className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                                             </svg>
                                                         </motion.button>
                                                     </motion.div>
