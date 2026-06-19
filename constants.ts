@@ -4,7 +4,9 @@ import type { TextContent } from './types';
 // This array must stay EMPTY — anything here is bundled into the public browser JS.
 export const BACKUP_API_KEYS: string[] = [];
 
-export const WHATSAPP_SUPPORT_LINK = "https://wa.me/message/VJDW3IISAWAPM1";
+// Phone-number form (NOT a wa.me/message/CODE short link) — only this form
+// honours the ?text= prefill that fills in the support/purchase message.
+export const WHATSAPP_SUPPORT_LINK = "https://wa.me/2290154362807";
 
 // Support link with a friendly pre-filled message (carries the user's A6 id).
 export function buildSupportLink(id?: string | null, isFR: boolean = true): string {

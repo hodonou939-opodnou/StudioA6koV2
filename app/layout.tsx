@@ -143,6 +143,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <p className="mb-2">Copyright © 2026 A6ko. Tous droits réservés.</p>
           <p className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <a href="/blog" className="hover:text-brand-primary transition-colors">Blog</a>
+            <span aria-hidden="true">·</span>
             <a href="https://a6ko.com/" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition-colors">
               Créer une boutique sur A6ko
             </a>
