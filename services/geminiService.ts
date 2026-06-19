@@ -133,6 +133,11 @@ const proxyCallToBackend = async (action: string, args: any[], onProgress?: (msg
                     throw new Error('INSUFFICIENT_CREDITS');
                 }
             }
+            // On failure the server has already refunded — re-sync the balance so
+            // the UI never shows a deducted amount for a generation that failed.
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('a6ko:credits-changed'));
+            }
             throw new Error(jsonResult.error || `Server error: ${response.status}`);
         }
 

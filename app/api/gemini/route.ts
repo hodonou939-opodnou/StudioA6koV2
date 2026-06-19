@@ -208,6 +208,20 @@ export async function POST(req: NextRequest) {
               : "gemini-image",
         },
       });
+
+      // Partial success: only charge for variants actually delivered — refund the rest.
+      if (action === "generateFashionShoot" && Array.isArray(result)) {
+        const requested = Math.max(1, Math.floor(Number(args?.[0]?.variants) || 1));
+        const missing = Math.max(0, requested - result.length);
+        if (missing > 0) {
+          try {
+            await refund(userId, missing * 2, gen.id);
+          } catch (e) {
+            console.warn("[partial refund] failed", e);
+          }
+        }
+      }
+
       return NextResponse.json(attachGenerationId(result, gen.id));
     } catch (err) {
       await refund(userId, cost, gen.id); // refund the FULL reserved amount
