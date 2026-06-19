@@ -109,11 +109,17 @@ export async function claimAnonymousCredits(anonId: string, realId: string) {
       // New SSO user: adopt the guest's remaining free balance and the guest's
       // A6 id, so the id seen at first visit stays with the account permanently.
       const balanceAfter = anon.credits;
+      const adoptedShortId = anon.shortId ?? real.shortId;
+      // CRITICAL: free the guest's A6 id first — shortId is UNIQUE, so the real
+      // account can't adopt it while the guest row still holds it (P2002 -> 500).
+      if (anon.shortId) {
+        await tx.user.update({ where: { id: anonId }, data: { shortId: null } });
+      }
       await tx.user.update({
         where: { id: realId },
         data: {
           credits: balanceAfter,
-          shortId: anon.shortId ?? real.shortId,
+          shortId: adoptedShortId,
         },
       });
       await tx.creditLedger.create({
