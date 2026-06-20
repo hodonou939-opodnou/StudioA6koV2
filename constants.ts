@@ -523,6 +523,8 @@ export const textContent: TextContent = {
     smoking: 'Fumeur',
     classyBusiness: 'Business Classe',
     eliteSmoking: 'Fumeur Élite',
+    blackAndWhite: 'Noir & Blanc',
+    eliteCigarBlackAndWhite: 'Cigare Élite Noir & Blanc',
     environment: 'Environnement',
     randomizeEnvironment: 'Mélanger l\'Environnement',
     studio: 'Studio (Minimaliste)',

@@ -1002,10 +1002,6 @@ export const EssayageVirtuel: React.FC<EssayageVirtuelProps> = ({
                                     alt="Fitting results"
                                     className="w-full h-full object-cover rounded-2xl hover:scale-105 transition-transform duration-700"
                                 />
-                                <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md text-white rounded-xl py-1.5 px-3 text-[10px] font-bold uppercase tracking-widest pointer-events-none flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-brand-primary animate-ping" />
-                                    <span>a6ko studio model fit</span>
-                                </div>
                             </div>
 
                             {/* a6ko Boutique Publishing Information Generator */}

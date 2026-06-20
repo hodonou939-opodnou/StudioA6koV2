@@ -130,6 +130,41 @@ const StudioApp: React.FC = () => {
     }
   }, []);
 
+  // Returned from Moneroo checkout (?payment=processing): confirm the payment
+  // and grant credits right away — a fallback to the webhook so recharge works
+  // even if the webhook is delayed or not configured. Polls a few times because
+  // Moneroo may take a moment to mark the transaction successful.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URL(window.location.href).searchParams;
+    if (params.get('payment') !== 'processing') return;
+    // Clean the URL immediately so a refresh doesn't re-trigger.
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete('payment');
+    window.history.replaceState({}, '', clean.toString());
+
+    let cancelled = false;
+    (async () => {
+      for (let attempt = 0; attempt < 4 && !cancelled; attempt++) {
+        try {
+          const res = await fetch('/api/payments/verify', { method: 'POST' });
+          if (res.ok) {
+            const { granted } = await res.json();
+            if (granted && granted > 0) {
+              window.dispatchEvent(new CustomEvent('a6ko:credits-changed'));
+              setActiveTab('account');
+              return;
+            }
+          }
+        } catch {
+          /* retry */
+        }
+        await new Promise((r) => setTimeout(r, 2500)); // wait, then re-check
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // If a guest started a face capture and had to log in, bring them to the
   // account page on return — the face card there auto-resumes the capture.
   useEffect(() => {

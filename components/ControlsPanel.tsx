@@ -1043,24 +1043,32 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
               <option value="Corporate">{T.intent_corporate}</option>
           </SelectInput>
           <SelectInput label={T.pose} value={options.pose} onChange={e => setOptions(prev => ({...prev, pose: e.target.value as any}))}>
-              <option value="Runway">{T.runway}</option>
-              <option value="Editorial">{T.editorial}</option>
-              <option value="Portrait">{T.portrait}</option>
-              <option value="Dynamic Pose">{T.dynamicPose}</option>
-              <option value="Candid">{T.candid}</option>
-              <option value="Product Focus">{T.productFocus}</option>
-              <option value="Sitting Pose">{T.sittingPose}</option>
-              <option value="Gesture">{T.gesture}</option>
-              <option value="Selfie Pose">{T.selfiePose}</option>
-              <option value="Mode">{T.mode}</option>
-              <option value="Glamour">{T.glamour}</option>
-              <option value="Corporate">{T.corporate}</option>
-              <option value="Smoking">{T.smoking}</option>
-              <option value="Classy Business">{T.classyBusiness}</option>
-              <option value="Elite Smoking">{T.eliteSmoking}</option>
-              <option value="Black and White">{T.blackAndWhite}</option>
-              <option value="Elite Cigar Black and White">{T.eliteCigarBlackAndWhite}</option>
-              <option value="Keynote Presentation">Keynote Presentation</option>
+              <optgroup label={T.language === 'fr' ? '— Poses Mode —' : '— Fashion Poses —'}>
+                <option value="Editorial">{T.editorial}</option>
+                <option value="Runway">{T.runway}</option>
+                <option value="Portrait">{T.portrait}</option>
+                <option value="Dynamic Pose">{T.dynamicPose}</option>
+                <option value="Candid">{T.candid}</option>
+                <option value="Gesture">{T.gesture}</option>
+                <option value="Sitting Pose">{T.sittingPose}</option>
+                <option value="Selfie Pose">{T.selfiePose}</option>
+                <option value="Product Focus">{T.productFocus}</option>
+              </optgroup>
+              <optgroup label={T.language === 'fr' ? '— Styles Signature —' : '— Signature Styles —'}>
+                <option value="Mode">{T.mode}</option>
+                <option value="Glamour">{T.glamour}</option>
+                <option value="Corporate">{T.corporate}</option>
+                <option value="Classy Business">{T.classyBusiness}</option>
+              </optgroup>
+              <optgroup label={T.language === 'fr' ? '— Cigare & Noir/Blanc —' : '— Cigar & Black/White —'}>
+                <option value="Smoking">{T.smoking}</option>
+                <option value="Elite Smoking">{T.eliteSmoking}</option>
+                <option value="Black and White">{T.blackAndWhite}</option>
+                <option value="Elite Cigar Black and White">{T.eliteCigarBlackAndWhite}</option>
+              </optgroup>
+              <optgroup label={T.language === 'fr' ? '— Spécial —' : '— Special —'}>
+                <option value="Keynote Presentation">Keynote Presentation</option>
+              </optgroup>
           </SelectInput>
         </Section>
 

@@ -105,8 +105,17 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       aria-modal="true" 
       role="dialog"
     >
-      <div className="bg-brand-surface rounded-3xl shadow-2xl w-full max-w-lg border border-brand-primary/10 overflow-hidden transform transition-all scale-100 my-8">
-        
+      <div className="relative bg-brand-surface rounded-3xl shadow-2xl w-full max-w-lg border border-brand-primary/10 overflow-hidden transform transition-all scale-100 my-8">
+
+        {/* Always-visible close in the top-right corner (mobile-friendly). */}
+        <button
+          onClick={onClose}
+          aria-label={isFR ? 'Fermer' : 'Close'}
+          className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-brand-bg/80 backdrop-blur text-brand-text-secondary hover:text-brand-text hover:bg-brand-bg shadow-sm border border-brand-secondary/20 transition-colors"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-brand-primary/10 via-brand-surface to-brand-primary/5 p-6 text-center border-b border-brand-secondary/15">
              <div className="w-12 h-12 bg-brand-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
