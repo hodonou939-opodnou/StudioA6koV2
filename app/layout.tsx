@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const faviconSvg =
-  "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23FFF8F0%22 rx=%2220%22/><text x=%2250%22 y=%2270%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22%23111827%22>a<tspan fill=%22%2316A34A%22>6</tspan>ko</text></svg>";
-
 export const metadata: Metadata = {
   metadataBase: new URL("https://studio.a6ko.com"),
   title: {
@@ -29,7 +26,15 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
   manifest: "/manifest.json",
-  icons: { icon: faviconSvg, apple: "/icon-512.png" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icon-512.png",
+  },
   openGraph: {
     type: "website",
     url: "https://studio.a6ko.com",
@@ -37,14 +42,14 @@ export const metadata: Metadata = {
     title: "Studio A6ko | Studio Photo de Mode IA & Essayage Virtuel",
     description:
       "Photoshoot ultra-réaliste, essayage virtuel (virtual try-on) et création publicitaire par IA — pour marques, boutiques et créateurs.",
-    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "Studio A6ko" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Studio A6ko" }],
     locale: "fr_FR",
   },
   twitter: {
     card: "summary_large_image",
     title: "Studio A6ko | Studio Photo de Mode IA & Essayage Virtuel",
     description: "Photoshoot ultra-réaliste, essayage virtuel et création publicitaire par IA.",
-    images: ["/icon-512.png"],
+    images: ["/og-image.png"],
   },
 };
 
@@ -59,8 +64,19 @@ const jsonLd = {
   operatingSystem: "All",
   description:
     "Studio photo de mode par IA : photoshoot ultra-réaliste, essayage virtuel (virtual try-on) et création publicitaire.",
+  image: "https://studio.a6ko.com/icon-512.png",
   offers: { "@type": "Offer", price: "0", priceCurrency: "XOF" },
-  publisher: { "@type": "Organization", name: "A6ko", url: "https://a6ko.com" },
+  publisher: {
+    "@type": "Organization",
+    name: "A6ko",
+    url: "https://a6ko.com",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://studio.a6ko.com/icon-512.png",
+      width: 512,
+      height: 512,
+    },
+  },
 };
 
 export const viewport: Viewport = {

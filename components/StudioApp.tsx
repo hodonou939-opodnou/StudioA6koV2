@@ -277,9 +277,9 @@ const StudioApp: React.FC = () => {
     <div className="min-h-screen bg-brand-bg text-brand-text font-sans selection:bg-brand-primary/30 overflow-x-hidden">
       <header className="fixed top-0 left-0 right-0 z-40 bg-brand-bg/80 backdrop-blur-md border-b border-brand-secondary/10">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleTabChange('home')}>
-            <div className="w-8 h-8 bg-brand-text rounded-lg flex items-center justify-center text-white font-black text-lg">a</div>
-            <span className="font-bold text-xl tracking-tight hidden sm:block">studio a6ko</span>
+          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleTabChange('home')}>
+            <span className="font-bold text-lg sm:text-xl tracking-tight text-brand-text">studio</span>
+            <img src="/logo.png" alt="a6ko" className="h-5 sm:h-6 w-auto" />
           </div>
 
           <nav className="hidden md:flex items-center gap-1 bg-brand-surface/50 p-1 rounded-full border border-brand-secondary/20">

@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     title: "Blog Studio A6ko — Mode, IA & e-commerce",
     description:
       "Guides pratiques sur la mode par IA, l'essayage virtuel et le e-commerce en Afrique de l'Ouest.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Studio A6ko" }],
   },
 };
 
