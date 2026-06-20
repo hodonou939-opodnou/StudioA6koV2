@@ -1,14 +1,139 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Icon } from './Icon';
 
 interface HomeLandingPageProps {
   onLaunchPhotoshoot: () => void;
   onLaunchCreatives: () => void;
+  onLaunchEssayage?: () => void;
   T: any;
 }
 
-export const HomeLandingPage: React.FC<HomeLandingPageProps> = ({ onLaunchPhotoshoot, onLaunchCreatives, T }) => {
+// Before/After demo pairs. SWAP these for your own real African before/after
+// shots: set `before` to the raw input photo and `after` to the generated
+// result. If only `after` is given, a "raw photo" look is simulated from it.
+interface DemoPair {
+  tag: string;
+  beforeLabel: string;
+  afterLabel: string;
+  after: string;   // the polished / generated result
+  before?: string;  // optional raw input; falls back to a filtered `after`
+  cta: 'photoshoot' | 'essayage' | 'creatives';
+}
+
+// A draggable before/after image comparison that auto-sweeps to grab attention
+// (the "GIF" effect) until the visitor takes over by dragging.
+const BeforeAfterSlider: React.FC<{ pair: DemoPair; isFR: boolean }> = ({ pair, isFR }) => {
+  const [pos, setPos] = useState(60);          // % revealed of the "after" image
+  const [auto, setAuto] = useState(true);       // auto-sweeping until first touch
+  const ref = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const dir = useRef(-1);
+
+  // Attention-grabbing auto-sweep (paused once the user interacts).
+  useEffect(() => {
+    if (!auto) return;
+    const id = setInterval(() => {
+      setPos((p) => {
+        let next = p + dir.current * 0.8;
+        if (next <= 32) { next = 32; dir.current = 1; }
+        if (next >= 78) { next = 78; dir.current = -1; }
+        return next;
+      });
+    }, 30);
+    return () => clearInterval(id);
+  }, [auto]);
+
+  const moveTo = useCallback((clientX: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const pct = ((clientX - rect.left) / rect.width) * 100;
+    setPos(Math.max(0, Math.min(100, pct)));
+  }, []);
+
+  const onDown = (clientX: number) => { dragging.current = true; setAuto(false); moveTo(clientX); };
+  const onMove = (clientX: number) => { if (dragging.current) moveTo(clientX); };
+  const onUp = () => { dragging.current = false; };
+
+  return (
+    <div
+      ref={ref}
+      className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden select-none cursor-ew-resize shadow-xl border border-brand-secondary/20 group"
+      onMouseDown={(e) => onDown(e.clientX)}
+      onMouseMove={(e) => onMove(e.clientX)}
+      onMouseUp={onUp}
+      onMouseLeave={onUp}
+      onTouchStart={(e) => onDown(e.touches[0].clientX)}
+      onTouchMove={(e) => onMove(e.touches[0].clientX)}
+      onTouchEnd={onUp}
+    >
+      {/* AFTER (full, polished) — the base layer */}
+      <img src={pair.after} alt={pair.afterLabel} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+      <span className="absolute top-3 right-3 z-20 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow">
+        {pair.afterLabel}
+      </span>
+
+      {/* BEFORE (raw) — clipped to the left of the handle */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ width: `${pos}%` }}>
+        <img
+          src={pair.before || pair.after}
+          alt={pair.beforeLabel}
+          className="absolute inset-0 h-full object-cover"
+          style={{
+            width: ref.current ? `${ref.current.getBoundingClientRect().width}px` : '100%',
+            filter: pair.before ? 'none' : 'grayscale(0.85) contrast(0.85) brightness(0.92) blur(0.4px)',
+          }}
+        />
+        <span className="absolute top-3 left-3 bg-black/60 backdrop-blur text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+          {pair.beforeLabel}
+        </span>
+      </div>
+
+      {/* Handle */}
+      <div className="absolute top-0 bottom-0 z-10 w-1 bg-white shadow-[0_0_8px_rgba(0,0,0,0.4)] pointer-events-none" style={{ left: `${pos}%` }}>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center text-brand-text">
+          <Icon name="arrow-right" size={12} className="-mr-0.5 rotate-180" />
+          <Icon name="arrow-right" size={12} className="-ml-0.5" />
+        </div>
+      </div>
+
+      <span className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 bg-black/55 backdrop-blur text-white text-[10px] font-semibold px-3 py-1 rounded-full opacity-90 group-hover:opacity-0 transition-opacity">
+        {isFR ? '← Glissez pour comparer →' : '← Drag to compare →'}
+      </span>
+    </div>
+  );
+};
+
+export const HomeLandingPage: React.FC<HomeLandingPageProps> = ({ onLaunchPhotoshoot, onLaunchCreatives, onLaunchEssayage, T }) => {
   const [activeCreativeTab, setActiveCreativeTab] = useState(0);
+  const isFR = T.language === 'fr';
+
+  // Demo before/after pairs (swap the URLs for your real African shots).
+  const demoPairs: DemoPair[] = [
+    {
+      tag: isFR ? 'Essayage Virtuel' : 'Virtual Try-On',
+      beforeLabel: isFR ? 'Photo simple' : 'Plain photo',
+      afterLabel: isFR ? 'Essayé' : 'Tried on',
+      after: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=700&q=80',
+      cta: 'essayage',
+    },
+    {
+      tag: isFR ? 'Séance Photo IA' : 'AI Photoshoot',
+      beforeLabel: isFR ? 'Brut' : 'Raw',
+      afterLabel: isFR ? 'Studio' : 'Studio',
+      after: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=700&q=80',
+      cta: 'photoshoot',
+    },
+    {
+      tag: isFR ? 'Visuel Publicitaire' : 'Ad Creative',
+      beforeLabel: isFR ? 'Idée' : 'Idea',
+      afterLabel: isFR ? 'Campagne' : 'Campaign',
+      after: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=700&q=80',
+      cta: 'creatives',
+    },
+  ];
+  const launchFor = (cta: DemoPair['cta']) =>
+    cta === 'creatives' ? onLaunchCreatives : cta === 'essayage' ? (onLaunchEssayage || onLaunchPhotoshoot) : onLaunchPhotoshoot;
 
   const creativeTabs = [
     { title: T.homeTab1Title, desc: T.homeTab1Desc, icon: 'layers' as const },
@@ -95,6 +220,41 @@ export const HomeLandingPage: React.FC<HomeLandingPageProps> = ({ onLaunchPhotos
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 1.5 Before / After live demos — drag to compare, auto-animated */}
+      <div className="w-full max-w-6xl mx-auto">
+        <div className="text-center mb-10 md:mb-14">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-primary/10 text-brand-primary text-xs md:text-sm font-bold uppercase tracking-wider mb-5">
+            <Icon name="sparkles" size={14} className="md:w-4 md:h-4" /> {isFR ? 'Avant / Après' : 'Before / After'}
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold text-brand-text mb-4 tracking-tight">
+            {isFR ? 'Voyez la transformation' : 'See the transformation'}
+          </h2>
+          <p className="text-brand-text-secondary text-base md:text-lg max-w-2xl mx-auto font-light">
+            {isFR
+              ? 'Glissez le curseur sur chaque image pour révéler ce que Studio A6ko crée — en quelques secondes.'
+              : 'Drag the slider on each image to reveal what Studio A6ko creates — in seconds.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          {demoPairs.map((pair, i) => (
+            <div key={i} className="flex flex-col gap-4">
+              <BeforeAfterSlider pair={pair} isFR={isFR} />
+              <div className="text-center px-2">
+                <h3 className="text-lg font-bold text-brand-text">{pair.tag}</h3>
+                <button
+                  onClick={launchFor(pair.cta)}
+                  className="mt-3 inline-flex items-center gap-2 bg-brand-text text-brand-surface px-5 py-2.5 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-brand-primary transition-colors"
+                >
+                  {isFR ? 'Essayer maintenant' : 'Try it now'}
+                  <Icon name="arrow-right" size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

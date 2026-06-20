@@ -207,6 +207,7 @@ const StudioApp: React.FC = () => {
             T={T}
             onLaunchPhotoshoot={() => setIsPhotoshootModalOpen(true)}
             onLaunchCreatives={() => handleTabChange('creatives')}
+            onLaunchEssayage={() => handleTabChange('essayage')}
           />
         );
       case 'photoshoot':
@@ -282,6 +283,7 @@ const StudioApp: React.FC = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-1 bg-brand-surface/50 p-1 rounded-full border border-brand-secondary/20">
+            <button onClick={() => handleTabChange('home')} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'home' ? 'bg-brand-text text-white shadow-lg' : 'text-brand-text-secondary hover:text-brand-text hover:bg-brand-bg'}`}>{T.language === 'fr' ? 'Accueil' : 'Home'}</button>
             <button onClick={() => handleTabChange('essayage')} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'essayage' ? 'bg-brand-text text-white shadow-lg' : 'text-brand-text-secondary hover:text-brand-text hover:bg-brand-bg'}`}>{T.navTryOn || 'Essayage Virtuel'}</button>
             <button onClick={() => setIsPhotoshootModalOpen(true)} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${isPhotoshootModalOpen ? 'bg-brand-text text-white shadow-lg' : 'text-brand-text-secondary hover:text-brand-text hover:bg-brand-bg'}`}>{T.navPhotoshoot}</button>
             <button onClick={() => handleTabChange('creatives')} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'creatives' ? 'bg-brand-text text-white shadow-lg' : 'text-brand-text-secondary hover:text-brand-text hover:bg-brand-bg'}`}>{T.navCreatives}</button>
@@ -326,7 +328,8 @@ const StudioApp: React.FC = () => {
       </main>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-brand-bg/95 backdrop-blur-md border-t border-brand-secondary/20 pb-4">
-        <div className="flex items-center justify-around h-16 px-2">
+        <div className="flex items-center justify-around h-16 px-1">
+          <button onClick={() => handleTabChange('home')} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'home' ? 'text-brand-primary' : 'text-brand-text-secondary hover:text-brand-text'}`}><Icon name="home" size={20} /><span className="text-[10px] font-medium">{T.language === 'fr' ? 'Accueil' : 'Home'}</span></button>
           <button onClick={() => handleTabChange('essayage')} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'essayage' ? 'text-brand-primary' : 'text-brand-text-secondary hover:text-brand-text'}`}><Icon name="zap" size={20} /><span className="text-[10px] font-medium">{T.navTryOn || 'Essayage'}</span></button>
           <button onClick={() => setIsPhotoshootModalOpen(true)} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isPhotoshootModalOpen ? 'text-brand-primary' : 'text-brand-text-secondary hover:text-brand-text'}`}><Icon name="camera" size={20} /><span className="text-[10px] font-medium">{T.navPhotoshoot}</span></button>
           <button onClick={() => handleTabChange('creatives')} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'creatives' ? 'text-brand-primary' : 'text-brand-text-secondary hover:text-brand-text'}`}><Icon name="pen-tool" size={20} /><span className="text-[10px] font-medium">{T.navCreatives}</span></button>
