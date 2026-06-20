@@ -1821,8 +1821,11 @@ export const generateFashionShoot = async (
                                 aspectRatio: mapAspectRatioForApi(finalOptions.aspectRatio)
                             }
                         };
+                        // 2K (not 4K): near-identical quality but ~2x faster, so the
+                        // request finishes well within mobile connection limits.
+                        // (4K at 45-60s was dropping on phones → "génération échouée".)
                         if (modelName !== 'gemini-2.5-flash-image') {
-                            config.imageConfig.imageSize = '4K';
+                            config.imageConfig.imageSize = '2K';
                         }
                         
                         return await ai.models.generateContent({

@@ -237,52 +237,59 @@ export async function POST(req: NextRequest) {
     }
 
     const startedAt = Date.now();
+    let result: any;
     try {
-      const result = await dispatch(action, args, provider);
+      // ONLY the actual image/video generation gates success. Long generations
+      // (45-60s) can outlive a Neon idle connection, so the DB bookkeeping below
+      // is isolated — a dropped connection must NOT turn a finished image into an
+      // error for the user (which would also wrongly refund + hide their result).
+      result = await dispatch(action, args, provider);
+    } catch (err) {
+      try {
+        await refund(userId, cost, gen.id); // refund the FULL reserved amount
+        await prisma.generation.update({
+          where: { id: gen.id },
+          data: {
+            status: GenStatus.FAILED,
+            latencyMs: Date.now() - startedAt,
+            errorCode: (err as Error).message?.slice(0, 120) ?? "GEN_FAILED",
+          },
+        });
+      } catch (bookErr) {
+        console.warn("[gen failure bookkeeping] failed", bookErr);
+      }
+      throw err;
+    }
+
+    // --- Generation succeeded. Everything below is best-effort and must NEVER
+    // fail the response or the user loses an image they already paid for. ---
+    const requested = Math.max(1, Math.floor(Number(args?.[0]?.variants) || 1));
+    const missing =
+      action === "generateFashionShoot" && Array.isArray(result)
+        ? Math.max(0, requested - result.length)
+        : 0;
+
+    // Fast, critical Neon writes — awaited (so Cloud Run doesn't freeze them) but
+    // guarded so a dropped connection can't fail the response.
+    try {
       await prisma.generation.update({
         where: { id: gen.id },
         data: {
           status: GenStatus.SUCCESS,
           latencyMs: Date.now() - startedAt,
-          // Record which model actually served this — enables provider A/B in insights.
           provider: provider === "OPENAI" ? Provider.OPENAI : Provider.GEMINI,
-          model:
-            provider === "OPENAI"
-              ? process.env.OPENAI_IMAGE_MODEL || "gpt-image-2"
-              : "gemini-image",
+          model: provider === "OPENAI" ? process.env.OPENAI_IMAGE_MODEL || "gpt-image-2" : "gemini-image",
         },
       });
-
-      // Partial success: only charge for variants actually delivered — refund the rest.
-      if (action === "generateFashionShoot" && Array.isArray(result)) {
-        const requested = Math.max(1, Math.floor(Number(args?.[0]?.variants) || 1));
-        const missing = Math.max(0, requested - result.length);
-        if (missing > 0) {
-          try {
-            await refund(userId, missing * 2, gen.id);
-          } catch (e) {
-            console.warn("[partial refund] failed", e);
-          }
-        }
-      }
-
-      // Feature free-tier creations in the public gallery (anonymous). Awaited
-      // but fully guarded so it can never fail or meaningfully delay the result.
-      await autoPublishToGallery(gen.id, userId, result, req);
-
-      return NextResponse.json(attachGenerationId(result, gen.id));
-    } catch (err) {
-      await refund(userId, cost, gen.id); // refund the FULL reserved amount
-      await prisma.generation.update({
-        where: { id: gen.id },
-        data: {
-          status: GenStatus.FAILED,
-          latencyMs: Date.now() - startedAt,
-          errorCode: (err as Error).message?.slice(0, 120) ?? "GEN_FAILED",
-        },
-      });
-      throw err;
+      if (missing > 0) await refund(userId, missing * 2, gen.id);
+    } catch (e) {
+      console.warn("[post-gen bookkeeping] skipped:", (e as Error)?.message);
     }
+
+    // Gallery publish involves a GCS upload — keep it from adding latency.
+    autoPublishToGallery(gen.id, userId, result, req).catch(() => {});
+
+    return NextResponse.json(attachGenerationId(result, gen.id));
   } catch (e: any) {
     console.error(`[/api/gemini] ${action} failed:`, e);
     return NextResponse.json(
