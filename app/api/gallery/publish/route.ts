@@ -33,9 +33,15 @@ export async function POST(req: NextRequest) {
     }
     if (gen.isPublic) return NextResponse.json({ ok: true, already: true });
 
-    // "Free mode" only — paying customers' commercial work stays private.
-    const paid = await prisma.payment.count({ where: { userId, status: "PAID" } });
-    if (paid > 0) return NextResponse.json({ ok: true, skipped: "paid-user" });
+    // "Free mode" only — paying / credited customers' work stays private.
+    // Payment.status PAID alone is unreliable (the webhook may not have fired),
+    // so we ALSO treat anyone who ever received purchased or admin-granted
+    // credits as non-free.
+    const [paid, privileged] = await Promise.all([
+      prisma.payment.count({ where: { userId, status: "PAID" } }),
+      prisma.creditLedger.count({ where: { userId, reason: { in: ["PURCHASE", "ADMIN_GRANT"] } } }),
+    ]);
+    if (paid > 0 || privileged > 0) return NextResponse.json({ ok: true, skipped: "non-free-user" });
 
     const raw = base64.includes(",") ? base64.split(",")[1] : base64;
     const buf = Buffer.from(raw, "base64");

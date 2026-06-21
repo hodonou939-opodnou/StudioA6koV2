@@ -1729,9 +1729,9 @@ export const generateFashionShoot = async (
   };
 
   onProgress(`Generating ${finalOptions.variants} still image(s)...`);
-  const results: (Asset | { error: any })[] = [];
-  
-  for (let index = 0; index < finalOptions.variants; index++) {
+  // Generate all variants in PARALLEL — was sequential with a 5s wait between
+  // each, which made multi-variant shoots take 60-90s and time out on mobile.
+  const variantPromises = Array.from({ length: finalOptions.variants }, (_, index) => (async (): Promise<Asset | { error: any }> => {
         onProgress(`Generating variant ${index + 1} of ${finalOptions.variants}...`);
         console.log(`Starting generation for variant ${index + 1}`);
         const poseDescription = getRandomPoseVariation(finalOptions.pose);
@@ -1785,7 +1785,7 @@ export const generateFashionShoot = async (
             try {
                 onProgress(`Rendering variant ${index + 1} with ChatGPT Image 2...`);
                 const b64 = await generateFashionImageOpenAI(finalOptions.aspectRatio, textPrompt, imageParts);
-                results.push({
+                return {
                     id: `img-${Date.now()}-${index}`,
                     type: 'image' as const,
                     url: `data:image/png;base64,${b64}`,
@@ -1799,8 +1799,7 @@ export const generateFashionShoot = async (
                         environment: finalOptions.environment,
                         aspectRatio: finalOptions.aspectRatio,
                     },
-                });
-                continue; // OpenAI succeeded — next variant
+                }; // OpenAI succeeded
             } catch (err) {
                 // ChatGPT image failed (e.g. "Premature close"). Don't fail the
                 // variant — fall through to the Gemini model loop below so the
@@ -1813,7 +1812,6 @@ export const generateFashionShoot = async (
         // Retry logic with fallback
         const modelsToTry = ['gemini-3.1-flash-image', 'gemini-3-pro-image', 'gemini-2.5-flash-image'];
         let lastError: any;
-        let success = false;
 
         for (const modelName of modelsToTry) {
             for (let attempt = 0; attempt < 1; attempt++) { // 1 attempt per model
@@ -1844,7 +1842,7 @@ export const generateFashionShoot = async (
                     if (!imagePart || !imagePart.inlineData) throw new Error(`Image variant ${index + 1} could not be generated.`);
                     const base64Image = imagePart.inlineData.data;
                     
-                    results.push({
+                    return {
                         id: `img-${Date.now()}-${index}`,
                         type: 'image' as const,
                         url: `data:image/png;base64,${base64Image}`,
@@ -1858,9 +1856,7 @@ export const generateFashionShoot = async (
                             environment: finalOptions.environment,
                             aspectRatio: finalOptions.aspectRatio,
                         },
-                    });
-                    success = true;
-                    break; // Break attempt loop
+                    };
                 } catch (err: any) {
                     console.warn(`Attempt ${attempt + 1} with ${modelName} failed for variant ${index + 1}:`, err);
                     
@@ -1887,18 +1883,13 @@ export const generateFashionShoot = async (
                     }
                 }
             }
-            if (success) break; // Break models loop if success
         }
-        
-        if (!success) {
-             console.error(`All attempts failed for variant ${index + 1}`, lastError);
-             results.push({ error: lastError }); // Return error instead of throwing to allow partial success
-        } else if (index < finalOptions.variants - 1) {
-            // Wait 5 seconds between variants to avoid rate limits
-            onProgress(`Waiting before next variant...`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
-        }
-  }
+
+        console.error(`All attempts failed for variant ${index + 1}`, lastError);
+        return { error: lastError }; // partial success: report this variant's error
+  })());
+
+  const results: (Asset | { error: any })[] = await Promise.all(variantPromises);
 
   const successfulImages = results.filter((img): img is Asset => img !== null && !('error' in img)) as Asset[];
   const errors = results.filter((img) => img !== null && 'error' in img).map((e: any) => e.error);
