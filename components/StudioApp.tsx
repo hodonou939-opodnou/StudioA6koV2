@@ -277,9 +277,9 @@ const StudioApp: React.FC = () => {
     <div className="min-h-screen bg-brand-bg text-brand-text font-sans selection:bg-brand-primary/30 overflow-x-hidden">
       <header className="fixed top-0 left-0 right-0 z-40 bg-brand-bg/80 backdrop-blur-md border-b border-brand-secondary/10">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleTabChange('home')}>
+          <div className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0" onClick={() => handleTabChange('home')}>
             <span className="font-bold text-lg sm:text-xl tracking-tight text-brand-text">studio</span>
-            <img src="/logo.png" alt="a6ko" className="h-5 sm:h-6 w-auto" />
+            <img src="/logo.png" alt="a6ko" className="h-6 sm:h-7 w-auto" />
           </div>
 
           <nav className="hidden md:flex items-center gap-1 bg-brand-surface/50 p-1 rounded-full border border-brand-secondary/20">
@@ -291,34 +291,39 @@ const StudioApp: React.FC = () => {
             <button onClick={() => handleTabChange('account')} className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'account' ? 'bg-brand-text text-white shadow-lg' : 'text-brand-text-secondary hover:text-brand-text hover:bg-brand-bg'}`}>{T.navAccount}</button>
           </nav>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center bg-brand-surface/50 rounded-full border border-brand-secondary/20 p-1">
-              <button onClick={() => setLanguage('en')} className={`px-2 sm:px-3 py-1 rounded-full text-xs font-bold transition-all ${language === 'en' ? 'bg-brand-text text-white' : 'text-brand-text-secondary hover:text-brand-text'}`}>EN</button>
-              <button onClick={() => setLanguage('fr')} className={`px-2 sm:px-3 py-1 rounded-full text-xs font-bold transition-all ${language === 'fr' ? 'bg-brand-text text-white' : 'text-brand-text-secondary hover:text-brand-text'}`}>FR</button>
-            </div>
-
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isGuest ? (
-              <div className="flex items-center gap-4">
+              <>
                 <div className="hidden sm:block text-right">
                   <div className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider">{T.creditsLabel || 'Crédits'}</div>
                   <div className="text-sm font-black text-brand-primary">{userState.credits}</div>
                 </div>
-                <button onClick={() => setIsTryFreeModalOpen(true)} className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-brand-primary to-emerald-500 hover:brightness-110 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 shadow-lg shadow-brand-primary/25 flex items-center gap-1.5 transition-all text-center shrink-0 cursor-pointer">
-                  <Icon name="sparkles" className="w-4 h-4 animate-pulse" />
-                  <span>{language === 'fr' ? 'Essaie Gratuitement' : 'Try for Free'}</span>
+                {/* Compact CTA: "Essaie" with "Gratuitement" as a centered subtitle. */}
+                <button onClick={() => setIsTryFreeModalOpen(true)} className="px-3 py-1.5 sm:px-5 sm:py-2 bg-gradient-to-r from-brand-primary to-emerald-500 hover:brightness-110 text-white rounded-xl hover:scale-105 active:scale-95 shadow-lg shadow-brand-primary/25 flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer">
+                  <Icon name="sparkles" className="w-4 h-4 animate-pulse shrink-0" />
+                  <span className="flex flex-col items-center leading-tight text-center">
+                    <span className="text-xs font-black uppercase tracking-wider">{language === 'fr' ? 'Essaie' : 'Try'}</span>
+                    <span className="text-[8px] font-bold uppercase tracking-wide opacity-90 -mt-0.5">{language === 'fr' ? 'Gratuitement' : 'for Free'}</span>
+                  </span>
                 </button>
-              </div>
+              </>
             ) : (
               <>
                 <div className="hidden sm:block text-right">
                   <div className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider">{T.creditsLabel}</div>
                   <div className="text-sm font-black text-brand-primary">{userState.credits}</div>
                 </div>
-                <button onClick={() => handleTabChange('account')} className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-secondary to-brand-text/20 overflow-hidden border-2 border-white shadow-sm hover:scale-110 transition-transform active:scale-95" title={userState.displayName || T.navAccount}>
+                <button onClick={() => handleTabChange('account')} className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-secondary to-brand-text/20 overflow-hidden border-2 border-white shadow-sm hover:scale-110 transition-transform active:scale-95 shrink-0" title={userState.displayName || T.navAccount}>
                   <img src={userState.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userState.userId}`} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 </button>
               </>
             )}
+
+            {/* Language toggle — far right corner */}
+            <div className="flex items-center bg-brand-surface/50 rounded-full border border-brand-secondary/20 p-1 shrink-0">
+              <button onClick={() => setLanguage('en')} className={`px-2 sm:px-3 py-1 rounded-full text-xs font-bold transition-all ${language === 'en' ? 'bg-brand-text text-white' : 'text-brand-text-secondary hover:text-brand-text'}`}>EN</button>
+              <button onClick={() => setLanguage('fr')} className={`px-2 sm:px-3 py-1 rounded-full text-xs font-bold transition-all ${language === 'fr' ? 'bg-brand-text text-white' : 'text-brand-text-secondary hover:text-brand-text'}`}>FR</button>
+            </div>
           </div>
         </div>
       </header>
