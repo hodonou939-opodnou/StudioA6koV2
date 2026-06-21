@@ -624,7 +624,7 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
                 </div>
                 
                 <h2 className="text-2xl font-black text-brand-text tracking-tight uppercase">
-                  {language === 'en' ? 'A6ko is making its magic' : 'a6ko is making it magic'}
+                  {language === 'en' ? 'A6ko is making its magic' : 'a6ko opère sa magie'}
                 </h2>
                 
                 <div className="space-y-3">
@@ -808,7 +808,7 @@ export const PhotoshootStudio: React.FC<PhotoshootStudioProps> = ({
           </div>
           <div className="space-y-1">
             <p className="text-xs font-bold text-[#E2E8F0]">
-              {language === 'en' ? 'A6ko is making its magic...' : 'a6ko is making it magic...'}
+              {language === 'en' ? 'A6ko is making its magic...' : 'a6ko opère sa magie...'}
             </p>
             <p className="text-[10px] text-brand-text-secondary">
               {language === 'en' ? `Estimated wait: ` : `Attente estimée : `}

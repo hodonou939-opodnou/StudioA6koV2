@@ -527,51 +527,13 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
               </div>
             )}
 
-            <div className="mt-6 pt-4 border-t border-brand-secondary/20">
-              <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 transition-colors">{T.fullBodyPhoto}</label>
-              {options.model.fullBodyImage ? (
-                <div className="relative group rounded-2xl overflow-hidden border-2 border-brand-primary/30 h-28 bg-brand-surface">
-                  <img src={`data:${options.model.fullBodyImage.mimeType};base64,${options.model.fullBodyImage.base64}`} alt="Full Body Photo" className="w-full h-full object-contain opacity-50 group-hover:opacity-30 transition-opacity" />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="bg-brand-primary text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg flex items-center">
-                      <Icon name="check" className="w-3 h-3 mr-1.5" />
-                      {T.fullPhotoReady}
-                    </span>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => setOptions(prev => ({ ...prev, model: { ...prev.model, fullBodyImage: null } }))}
-                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition-transform hover:scale-110 active:scale-95 z-10"
-                    title={T.removePhoto}
-                  >
-                    <Icon name="close" className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="w-full cursor-pointer bg-brand-bg/50 hover:bg-brand-surface text-brand-text/60 font-black uppercase tracking-wider text-[11px] py-3 px-4 rounded-xl inline-flex items-center justify-center border border-dashed border-brand-secondary/50 transition-all duration-300 hover:border-brand-primary/50 hover:text-brand-primary shadow-sm active:scale-95">
-                  <Icon name="upload" className="w-4 h-4 mr-2" />
-                  <span>{T.uploadFullBody}</span>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*" 
-                    onClick={(e) => (e.currentTarget.value = '')}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          const image = await fileToBase64(file);
-                          setOptions(prev => ({ ...prev, model: { ...prev.model, fullBodyImage: { base64: image.base64, mimeType: image.mimeType } } }));
-                        } catch (error) {
-                          console.error("Error processing full body image:", error);
-                        }
-                      }
-                    }}
-                  />
-                </label>
-              )}
+          </div>
+        </Section>
 
-              <div className="mt-8 pt-6 border-t-2 border-dashed border-brand-secondary/30 flex flex-col gap-4">
+        {/* Model height + optional full-body photo — its OWN always-open section,
+            so it's visible right after a face capture without opening the upload panel. */}
+        <Section title={T.language === 'fr' ? 'Taille du mannequin' : 'Model Height'} defaultOpen={true}>
+              <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2.5 pl-1 mb-1">
                     <span className="inline-block w-1.5 h-6 rounded-full bg-brand-primary" />
                     <div>
@@ -705,12 +667,40 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                       })}
                     </div>
                   </div>
+
+              {/* Optional full-body photo — minimal, clean, shown right with the height. */}
+              {options.model.fullBodyImage ? (
+                <div className="flex items-center gap-2 bg-brand-bg/40 border border-brand-secondary/20 rounded-xl px-3 py-2">
+                  <Icon name="check" className="w-4 h-4 text-brand-primary shrink-0" />
+                  <span className="text-xs font-bold text-brand-text flex-1">{T.fullPhotoReady}</span>
+                  <button type="button" onClick={() => setOptions(prev => ({ ...prev, model: { ...prev.model, fullBodyImage: null } }))} className="text-red-500 hover:text-red-600 p-1 rounded-lg active:scale-95" title={T.removePhoto}>
+                    <Icon name="close" className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="w-full cursor-pointer flex items-center justify-center gap-2 bg-brand-bg/40 hover:bg-brand-surface text-brand-text-secondary hover:text-brand-primary text-[11px] font-bold py-2.5 px-3 rounded-xl border border-dashed border-brand-secondary/40 hover:border-brand-primary/40 transition-all active:scale-95">
+                  <Icon name="plus" className="w-3.5 h-3.5 shrink-0" />
+                  <span>{T.language === 'fr' ? 'Ajouter une photo complète de vous (optionnelle)' : 'Add a full photo of you (optional)'}</span>
+                  <input type="file" className="hidden" accept="image/*" onClick={(e) => (e.currentTarget.value = '')} onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const image = await fileToBase64(file);
+                        setOptions(prev => ({ ...prev, model: { ...prev.model, fullBodyImage: { base64: image.base64, mimeType: image.mimeType } } }));
+                      } catch (error) {
+                        console.error("Error processing full body image:", error);
+                      }
+                    }
+                  }} />
+                </label>
+              )}
               </div>
-            </div>
-          </div>
-             <SelectInput 
-                label={T.tattoos} 
-                value={options.tattoos} 
+        </Section>
+
+        <Section title={T.tattoos} defaultOpen={false}>
+             <SelectInput
+                label={T.tattoos}
+                value={options.tattoos}
                 onChange={e => setOptions(prev => ({...prev, tattoos: e.target.value as any}))}
             >
                 <option value="none">{T.tattoos_none}</option>
@@ -756,7 +746,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                 <div className="absolute inset-0 flex items-center justify-center bg-brand-surface/20 backdrop-blur-[1px] rounded-2xl">
                   <div className="flex items-center gap-2 bg-brand-surface px-4 py-2 rounded-full shadow-lg border border-brand-primary/20">
                     <Icon name="spinner" className="animate-spin w-4 h-4 text-brand-primary" />
-                    <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">Analyzing Garment...</span>
+                    <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">{T.language === 'fr' ? 'Analyse du vêtement...' : 'Analyzing Garment...'}</span>
                   </div>
                 </div>
               )}
@@ -1172,7 +1162,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                   </SelectInput>
                   
                   <div className="group">
-                      <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 group-hover:text-brand-primary transition-colors">Giant Screen Background Text (Optional)</label>
+                      <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 group-hover:text-brand-primary transition-colors">{T.language === 'fr' ? "Texte de l'écran géant (optionnel)" : 'Giant Screen Background Text (Optional)'}</label>
                       <input
                           type="text"
                           value={options.conferenceScreenText || ''}
@@ -1183,7 +1173,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                   </div>
 
                   <div className="group">
-                      <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 group-hover:text-brand-primary transition-colors">Kakimono / Banner Text (Optional)</label>
+                      <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 group-hover:text-brand-primary transition-colors">{T.language === 'fr' ? 'Texte Kakimono / Bannière (optionnel)' : 'Kakimono / Banner Text (Optional)'}</label>
                       <input
                           type="text"
                           value={options.conferenceKakimonoText || ''}
@@ -1194,7 +1184,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                   </div>
 
                   <div className="group">
-                      <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 group-hover:text-brand-primary transition-colors">Kakimono Logo (Optional)</label>
+                      <label className="block text-xs font-bold text-brand-text/80 mb-2 pl-1 group-hover:text-brand-primary transition-colors">{T.language === 'fr' ? 'Logo Kakimono (optionnel)' : 'Kakimono Logo (Optional)'}</label>
                       <input
                           type="file"
                           accept="image/png, image/jpeg, image/webp"
@@ -1218,7 +1208,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                           }}
                       />
                       {options.conferenceKakimonoLogo && (
-                          <div className="mt-2 text-xs text-green-500 font-medium ml-1">Logo uploaded successfully ✓</div>
+                          <div className="mt-2 text-xs text-green-500 font-medium ml-1">{T.language === 'fr' ? 'Logo téléchargé avec succès ✓' : 'Logo uploaded successfully ✓'}</div>
                       )}
                   </div>
               </div>
