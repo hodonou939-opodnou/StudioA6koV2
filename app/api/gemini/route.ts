@@ -5,8 +5,6 @@ import { prisma } from "@/lib/db";
 import { spend, refund, InsufficientCreditsError } from "@/lib/credits";
 import { getProviderForFeature } from "@/lib/model-config";
 import { downloadFace } from "@/lib/face-storage";
-import { persistImage } from "@/lib/ai/storage";
-import { countryFromRequest } from "@/lib/geo";
 import { Feature, Provider, GenStatus } from "@prisma/client";
 
 export const maxDuration = 300; // long-running image/video generation
@@ -85,47 +83,10 @@ function attachGenerationId(result: any, generationId: string): any {
   return result;
 }
 
-// Pull the first image's base64 out of a generation result (array or single).
-function firstImageB64(result: any): string | null {
-  const arr = Array.isArray(result) ? result : [result];
-  for (const a of arr) {
-    if (a?.type === "image") {
-      const b64 = a.base64 || (typeof a.url === "string" && a.url.startsWith("data:") ? a.url.split(",")[1] : "");
-      if (b64 && b64.length > 100) return b64;
-    }
-  }
-  return null;
-}
-
-// Auto-feature a FREE user's creation in the public community gallery (social
-// proof) right after it's generated — anonymous (country + date only), so the
-// gallery stays fresh without depending on the user clicking Download. Paying
-// customers' commercial work stays private. Best-effort: never breaks/slows the
-// generation response in a way that matters (failures are swallowed).
-async function autoPublishToGallery(
-  generationId: string,
-  userId: string,
-  result: any,
-  req: NextRequest,
-): Promise<void> {
-  try {
-    const paid = await prisma.payment.count({ where: { userId, status: "PAID" } });
-    if (paid > 0) return; // paid users' work stays private
-    const b64 = firstImageB64(result);
-    if (!b64) return; // no image (e.g. video/animation) — skip
-    const buf = Buffer.from(b64, "base64");
-    if (buf.length > 12 * 1024 * 1024) return;
-    const url = await persistImage(buf, "image/png");
-    if (url.startsWith("data:")) return; // object storage not configured
-    const country = await countryFromRequest(req);
-    await prisma.generation.update({
-      where: { id: generationId },
-      data: { isPublic: true, outputUrl: url, country },
-    });
-  } catch (e) {
-    console.warn("[auto-gallery] publish skipped:", (e as Error)?.message);
-  }
-}
+// NOTE: the gallery is populated ONLY when a FREE user explicitly shares or
+// downloads a creation (see /api/gallery/publish + VariantCard). We deliberately
+// do NOT auto-publish every generation — generating something does not mean the
+// user wants it public, and paid users' work always stays private.
 
 // Reproduces the old server.ts dispatch — runs the real Gemini calls server-side.
 async function dispatch(
@@ -285,9 +246,6 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.warn("[post-gen bookkeeping] skipped:", (e as Error)?.message);
     }
-
-    // Gallery publish involves a GCS upload — keep it from adding latency.
-    autoPublishToGallery(gen.id, userId, result, req).catch(() => {});
 
     return NextResponse.json(attachGenerationId(result, gen.id));
   } catch (e: any) {

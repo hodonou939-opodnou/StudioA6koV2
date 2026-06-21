@@ -348,7 +348,7 @@ export const textContent: TextContent = {
     comingSoon: 'Coming Soon',
     adGeneratorPlaceholder: 'Ad Generator Preview Placeholder',
     // Home Landing Page
-    homeLiveBadge: 'Studio a6ko is now live',
+    homeLiveBadge: 'AI Fashion Studio · Photoshoot & Virtual Try-On',
     homeHeroTitle1: 'The AI-Powered',
     homeHeroTitle2: 'Creative Engine',
     homeHeroSubtitle: 'Generate hyper-realistic fashion photos, design brand identities, and create high-converting ad creatives in seconds.',
@@ -779,7 +779,7 @@ export const textContent: TextContent = {
     comingSoon: 'Bientôt Disponible',
     adGeneratorPlaceholder: 'Aperçu du Générateur de Pub',
     // Home Landing Page
-    homeLiveBadge: 'Studio a6ko est maintenant en ligne',
+    homeLiveBadge: 'Studio photo de mode IA · Photoshoot & Essayage Virtuel',
     homeHeroTitle1: 'Le Moteur Créatif',
     homeHeroTitle2: 'Propulsé par l\'IA',
     homeHeroSubtitle: 'Générez des photos de mode hyper-réalistes, concevez des identités de marque et créez des publicités à fort taux de conversion en quelques secondes.',

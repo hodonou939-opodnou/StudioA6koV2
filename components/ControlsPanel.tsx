@@ -571,7 +571,14 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                 </label>
               )}
 
-              <div className="mt-6 flex flex-col gap-4">
+              <div className="mt-8 pt-6 border-t-2 border-dashed border-brand-secondary/30 flex flex-col gap-4">
+                  <div className="flex items-center gap-2.5 pl-1 mb-1">
+                    <span className="inline-block w-1.5 h-6 rounded-full bg-brand-primary" />
+                    <div>
+                      <h4 className="text-sm font-black text-brand-text uppercase tracking-wider leading-none">{T.language === 'fr' ? 'Taille du mannequin' : 'Model Height'}</h4>
+                      <p className="text-[10px] text-brand-text-secondary mt-0.5">{T.language === 'fr' ? 'Glissez la règle ou choisissez une taille' : 'Drag the ruler or pick a height'}</p>
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between mb-1 pl-1">
                       <label className="block text-xs font-bold text-brand-text/80 transition-colors uppercase tracking-widest">{T.bodyDescription}</label>
                       <div className="flex items-center gap-2">
@@ -1067,7 +1074,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
                 <option value="Elite Cigar Black and White">{T.eliteCigarBlackAndWhite}</option>
               </optgroup>
               <optgroup label={T.language === 'fr' ? '— Spécial —' : '— Special —'}>
-                <option value="Keynote Presentation">Keynote Presentation</option>
+                <option value="Keynote Presentation">{T.language === 'fr' ? 'Présentation Keynote' : 'Keynote Presentation'}</option>
               </optgroup>
           </SelectInput>
         </Section>
@@ -1148,7 +1155,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
           
           {options.environment === 'On stage as Keynote speaker' && (
               <div className="mt-4 p-4 rounded-2xl bg-brand-secondary/10 border border-brand-primary/20 space-y-4">
-                  <h4 className="text-sm font-bold text-brand-primary">Conference Room Details</h4>
+                  <h4 className="text-sm font-bold text-brand-primary">{T.language === 'fr' ? 'Détails de la salle de conférence' : 'Conference Room Details'}</h4>
 
                   <SelectInput label={T.micType} value={options.conferenceMicType || 'Podium Gooseneck'} onChange={e => setOptions(prev => ({...prev, conferenceMicType: e.target.value as any}))}>
                       <option value="Podium Gooseneck">{T.mic_podium}</option>

@@ -172,6 +172,7 @@ export const VariantCard: React.FC<VariantCardProps> = ({ asset, T, onAnimate, o
       const built = await buildFile();
       if (built && navigator.canShare && navigator.canShare({ files: [built.file] })) {
         await navigator.share({ title: 'Studio A6ko', text: shareMessage, files: [built.file] });
+        publishToGallery(); // free-tier shared creations feature in the gallery
         URL.revokeObjectURL(built.objectUrl);
         return;
       }

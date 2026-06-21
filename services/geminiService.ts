@@ -756,7 +756,8 @@ const buildPrompt = (options: GenerationOptions, poseDescription: string): strin
     -   **Task:** You MUST dress the main model in the EXACT same garment shown in this reference image. Ensure the clothing's cut, fit, silhouette, colors, print motifs, brand graphics, text, logo details, stripes, fabric pattern, button arrangement, zipper details, and texture are transferred onto the model's body with 100% precision and ultimate visual fidelity.
     -   **Physics & Folds:** The garment must conform and adapt realistically to the model's pose, contours, and 3D body shape, showing physical fabric folds, drapes, tension, and realistic lighting shadows.
     -   **Secondary Description:** The technical description "${options.garment.description}" is strictly secondary and serves only to clarify the fabric characteristics (e.g., silk, satin, heavy wool, leather) and three-dimensional fit. It must NEVER override, simplify, or modify the colors, patterns, logos, print graphics, or text shown in the garment reference image.
-    -   **Strict Guard:** Do NOT alter, redesign, simplify, or idealize the garment. Do NOT copy the face, hair, pose, body structure, or background from the garment reference image — ONLY transfer the clothing itself. All printed letters, logos, and motifs must be 100% legible and visible.`;
+    -   **Strict Guard:** Do NOT alter, redesign, simplify, or idealize the garment. ONLY transfer the clothing itself.
+    -   **CRITICAL — IGNORE ANY PERSON IN THE GARMENT IMAGE:** The garment reference image may show a person, model, or mannequin wearing or holding the clothing. That person is COMPLETELY IRRELEVANT and MUST be entirely ignored. You are STRICTLY FORBIDDEN from copying, blending, referencing, or being influenced by that person's face, facial features, skin tone, hair, body shape, pose, or background in ANY way. Treat the garment image as if the clothing were floating with no person at all. The model's face and identity come EXCLUSIVELY from the designated face/subject reference image(s) — NEVER from the garment image. All printed letters, logos, and motifs on the garment must remain 100% legible and visible.`;
     
     exactGarmentTransferInstruction = `\n2.5. **ABSOLUTE 1:1 PRECISION GARMENT INFUSION (SUPREME PRIORITY):**
     -   Since an uploaded garment reference photo is provided, you MUST infuse it onto the model with absolute 1:1 fidelity.
@@ -958,6 +959,10 @@ const getNegativePrompt = (options?: GenerationOptions): string => {
         }
         if (options.model?.bodyDescription) {
             base = "deviating from specified body type, incorrect morphology, wrong height, inconsistent body proportions, " + base;
+        }
+        if (options.garment?.image) {
+            // The garment photo may include a person — never let the model inherit that face.
+            base = "face copied from garment photo, model's face taken from clothing reference, wrong face, face from garment image, mannequin face, mixing two faces, " + base;
         }
     } else {
         base = "selective coloring, partial black and white, colorkey, desaturated skin, black and white, grayscale, monochrome, sepia, " + base;

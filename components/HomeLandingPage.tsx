@@ -167,6 +167,24 @@ export const HomeLandingPage: React.FC<HomeLandingPageProps> = ({ onLaunchPhotos
           <p className="text-lg sm:text-xl md:text-2xl text-brand-text-secondary max-w-2xl mx-auto font-light leading-relaxed">
             {T.homeHeroSubtitle}
           </p>
+
+          {/* Above-the-fold CTAs */}
+          <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={onLaunchPhotoshoot}
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-brand-text text-brand-surface px-8 py-4 rounded-full font-bold uppercase tracking-widest text-sm hover:bg-brand-primary transition-colors shadow-xl shadow-brand-primary/10"
+            >
+              <Icon name="camera" size={18} />
+              {isFR ? 'Lancer un photoshoot' : 'Start a photoshoot'}
+            </button>
+            <button
+              onClick={() => (onLaunchEssayage || onLaunchPhotoshoot)()}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-transparent border border-brand-secondary/30 text-brand-text px-8 py-4 rounded-full font-bold uppercase tracking-widest text-sm hover:bg-brand-secondary/10 transition-colors"
+            >
+              <Icon name="sparkles" size={18} />
+              {isFR ? 'Essayage virtuel' : 'Virtual try-on'}
+            </button>
+          </div>
         </div>
 
         {/* Interactive Hub / Bento Grid */}
