@@ -26,6 +26,60 @@ const SITE = "https://studio.a6ko.com";
 
 export const posts: Post[] = [
   {
+    slug: "ia-revolutionne-ateliers-couture-afrique-francophone",
+    title: "Comment l'IA révolutionne les ateliers de couture en Afrique francophone : du pagne traditionnel à la marketplace globale",
+    description:
+      "Du wax et du bazin à la marketplace mondiale : découvrez comment l'intelligence artificielle aide les ateliers de couture, stylistes et tailleurs d'Afrique francophone à se digitaliser, vendre plus et rayonner — sans studio ni gros budget.",
+    excerpt:
+      "Wax, bazin, broderie : le savoir-faire des ateliers africains est immense. L'IA leur donne enfin les outils pour le montrer au monde — sans studio, sans photographe, sans gros budget.",
+    date: "2026-06-21",
+    readMin: 9,
+    keywords: [
+      "IA couture afrique", "atelier couture afrique francophone", "pagne wax marketplace",
+      "styliste africain en ligne", "tailleur digital afrique", "vendre mode africaine en ligne",
+      "intelligence artificielle mode afrique", "bazin getzner boutique en ligne",
+    ],
+    body: [
+      { t: "p", html: "De Cotonou à Dakar, d'Abidjan à Lomé en passant par Ouagadougou et Bamako, les ateliers de couture sont le cœur battant de la mode africaine. Le pagne wax, le bazin getzner, la broderie, les coupes sur-mesure : ce savoir-faire est unique au monde. Pourtant, la plupart de ces ateliers restent invisibles en ligne — ils vendent de bouche à oreille ou via WhatsApp, pendant que la demande pour la mode africaine explose en Afrique comme dans la diaspora. <a href=\"https://www.jeuneafrique.com/tags/mode-africaine/\" target=\"_blank\" rel=\"noopener noreferrer\">Comme le documente régulièrement Jeune Afrique</a>, la création africaine n'a jamais autant rayonné. Le chaînon manquant ? Le numérique. Et c'est exactement là que l'intelligence artificielle change la donne." },
+
+      { t: "h2", text: "Le trésor des ateliers africains face au mur du numérique" },
+      { t: "p", html: "Un tailleur de talent peut réaliser une tenue magnifique… et ne disposer que d'une photo floue, prise au téléphone dans un atelier mal éclairé. Or sur Instagram, sur une marketplace ou sur une boutique en ligne, c'est <strong>l'image qui vend</strong>. Les trois obstacles reviennent partout :" },
+      { t: "ul", items: [
+        "<strong>Pas de visuels professionnels</strong> : un shooting studio coûte cher et prend du temps.",
+        "<strong>Peu de visibilité</strong> : sans présence en ligne soignée, impossible d'atteindre la clientèle urbaine et la diaspora.",
+        "<strong>Pas de boutique structurée</strong> : tout passe par WhatsApp, sans catalogue ni paiement clair.",
+      ]},
+
+      { t: "h2", text: "L'IA, nouvel apprenti de l'atelier" },
+      { t: "p", html: "L'intelligence artificielle ne remplace pas la main du couturier — elle l'outille. Avec un studio IA comme <a href=\"/\">Studio A6ko</a>, une création photographiée à plat devient en quelques secondes une image de niveau magazine, portée par un mannequin, dans un décor choisi. Concrètement, l'atelier peut désormais :" },
+      { t: "ul", items: [
+        "Réaliser un <a href=\"/blog/photoshoot-ia-photos-studio-sans-studio\">photoshoot de mode professionnel sans studio</a> ni photographe.",
+        "Proposer un <a href=\"/blog/essayage-virtuel-vendre-plus-vetements-afrique\">essayage virtuel</a> pour que le client se projette avant de commander.",
+        "Générer une <a href=\"/blog/fiche-produit-mode-qui-convertit\">fiche produit qui convertit</a>, prête pour la vente.",
+      ]},
+      { t: "p", html: "Le résultat : un atelier de quartier produit des visuels aussi soignés qu'une maison parisienne — et raconte enfin son histoire à la hauteur de son talent. Nous l'expliquions déjà dans notre article sur <a href=\"/blog/ia-mode-afrique-revolution-contenu-visuel\">l'IA et la mode en Afrique</a>." },
+
+      { t: "h2", text: "Du pagne traditionnel à la vitrine numérique" },
+      { t: "p", html: "Une fois les visuels prêts, la vitrine devient mondiale. Des plateformes comme <a href=\"https://afrikrea.com/\" target=\"_blank\" rel=\"noopener noreferrer\">Afrikrea (ANKA)</a> connectent déjà les créateurs africains à des acheteurs partout dans le monde. Le billet d'entrée vers ces marketplaces — et vers une clientèle internationale — ce sont précisément des images qui inspirent confiance. La fusion entre tradition et modernité fait vibrer toute une génération : il suffit de suivre des références comme <a href=\"https://www.instagram.com/blackbeautybag/\" target=\"_blank\" rel=\"noopener noreferrer\">@blackbeautybag</a> pour mesurer l'appétit du public francophone pour cette mode." },
+
+      { t: "h2", text: "Une opportunité économique majeure" },
+      { t: "p", html: "Le secteur n'a rien d'anecdotique. <a href=\"https://unesdoc.unesco.org/ark:/48223/pf0000387232\" target=\"_blank\" rel=\"noopener noreferrer\">Comme le souligne le rapport de l'UNESCO sur la mode en Afrique</a>, l'industrie textile et de l'habillement représente un potentiel économique et culturel considérable, porté par une population jeune, créative et de plus en plus connectée. Digitaliser un atelier, ce n'est pas un gadget : c'est participer à une économie créative en pleine expansion." },
+
+      { t: "h2", text: "Concrètement, par où commencer ?" },
+      { t: "ol", items: [
+        "<strong>Photographiez vos créations</strong> avec <a href=\"/\">Studio A6ko</a> (photoshoot IA + essayage virtuel).",
+        "<strong>Préparez vos fiches produits</strong> avec une description et un prix clairs.",
+        "<strong>Ouvrez votre boutique gratuite</strong> : stylistes, couturiers et tailleurs peuvent créer leur <em>Free Shop</em> sur <a href=\"https://a6ko.com\" target=\"_blank\" rel=\"noopener noreferrer\">a6ko.com</a>.",
+        "<strong>Vendez et gérez depuis votre téléphone</strong> : téléchargez l'application a6ko (Android &amp; iOS) sur <a href=\"https://a6ko.bj\" target=\"_blank\" rel=\"noopener noreferrer\">a6ko.bj</a>.",
+      ]},
+      { t: "quote", text: "L'IA ne coud pas à votre place. Elle donne à votre savoir-faire la vitrine qu'il mérite." },
+
+      { t: "h2", text: "Le futur se coud aujourd'hui" },
+      { t: "p", html: "Un atelier de Cotonou peut désormais habiller une cliente à Paris, Bruxelles ou Montréal — avec des visuels professionnels, une boutique en ligne et un paiement intégré. Le talent, lui, était déjà là. Créez votre boutique gratuite sur <a href=\"https://a6ko.com\" target=\"_blank\" rel=\"noopener noreferrer\">a6ko.com</a>, installez l'app depuis <a href=\"https://a6ko.bj\" target=\"_blank\" rel=\"noopener noreferrer\">a6ko.bj</a>, et générez vos premiers visuels avec <a href=\"/\">Studio A6ko</a> dès aujourd'hui." },
+      { t: "cta" },
+    ],
+  },
+  {
     slug: "essayage-virtuel-vendre-plus-vetements-afrique",
     title: "Essayage virtuel : comment vendre plus de vêtements en ligne en Afrique de l'Ouest",
     description:
