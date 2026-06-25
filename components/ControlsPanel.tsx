@@ -3,7 +3,7 @@ import type { GenerationOptions, ModelOptions, UserState } from '../types';
 import { Icon } from './Icon';
 import { get, set } from 'idb-keyval';
 import { GARMENT_PROMPTS } from '../garmentPrompts';
-import { generateGarmentDescription } from '../services/geminiService';
+import { generateGarmentDescription, suggestGarment } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileUtils';
 import { WHATSAPP_SUPPORT_LINK, buildSupportLink } from '../constants';
 import { getRecentModels, getRecentGarments, addRecentModel, addRecentGarment, RecentImage } from '../utils/recentUploads';
@@ -392,10 +392,33 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
       setOptions(prev => ({ ...prev, companion: { ...prev.companion, image: null } }));
   };
   
-  const handleInspireMe = useCallback(() => {
-    const randomPrompt = GARMENT_PROMPTS[Math.floor(Math.random() * GARMENT_PROMPTS.length)];
-    setOptions(prev => ({ ...prev, garment: { ...prev.garment, description: randomPrompt } }));
-  }, [setOptions]);
+  const [isInspiring, setIsInspiring] = useState(false);
+  const handleInspireMe = useCallback(async () => {
+    if (isInspiring) return;
+    setIsInspiring(true);
+    try {
+      // Gender-aware: learn from an uploaded garment first, else read the
+      // uploaded model photo, else (server-side) the user's captured face.
+      const garmentImage = options.garment.image
+        ? { base64: options.garment.image.base64, mimeType: options.garment.image.mimeType }
+        : null;
+      const modelImage = options.model.image
+        ? { base64: options.model.image.base64, mimeType: options.model.image.mimeType }
+        : null;
+      const suggestion = await suggestGarment(garmentImage, modelImage, currentApiKey);
+      if (suggestion && suggestion.trim()) {
+        setOptions(prev => ({ ...prev, garment: { ...prev.garment, description: suggestion.trim() } }));
+        return;
+      }
+      throw new Error('empty');
+    } catch {
+      // Network/AI failure → fall back to a random local idea so the button never dead-ends.
+      const randomPrompt = GARMENT_PROMPTS[Math.floor(Math.random() * GARMENT_PROMPTS.length)];
+      setOptions(prev => ({ ...prev, garment: { ...prev.garment, description: randomPrompt } }));
+    } finally {
+      setIsInspiring(false);
+    }
+  }, [isInspiring, options.garment.image, options.model.image, currentApiKey, setOptions]);
 
   const handleRandomizeEnvironment = useCallback(() => {
     const randomEnv = ENVIRONMENT_OPTIONS[Math.floor(Math.random() * ENVIRONMENT_OPTIONS.length)];
@@ -717,12 +740,13 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ options, setOption
               <label className="block text-xs font-bold text-brand-text/80 group-hover:text-brand-primary transition-colors">{T.garmentDescription}</label>
               <button
                 onClick={handleInspireMe}
+                disabled={isInspiring}
                 title={T.inspireMe}
-                className="flex items-center text-[10px] font-black uppercase tracking-wider text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-full hover:bg-brand-primary hover:text-white transition-all duration-300"
+                className="flex items-center text-[10px] font-black uppercase tracking-wider text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-full hover:bg-brand-primary hover:text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-wait"
                 aria-label={T.inspireMe}
               >
-                <Icon name="sparkles" className="w-3 h-3 mr-1.5" />
-                {T.inspireMe}
+                <Icon name={isInspiring ? 'spinner' : 'sparkles'} className={`w-3 h-3 mr-1.5 ${isInspiring ? 'animate-spin' : ''}`} />
+                {isInspiring ? (T.language === 'fr' ? 'Inspiration…' : 'Inspiring…') : T.inspireMe}
               </button>
             </div>
             <div className="relative">

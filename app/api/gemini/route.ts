@@ -111,6 +111,8 @@ async function dispatch(
       return service.generateInspirationalScript(args[0], key());
     case "generateShopInfo":
       return service.generateShopInfo(args[0], args[1], key());
+    case "suggestGarment":
+      return service.suggestGarment(args[0], args[1], key());
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -133,6 +135,22 @@ export async function POST(req: NextRequest) {
 
     // Free preview/helper actions: any signed-in session (incl. anonymous) may run them.
     if (cost === 0) {
+      // "Inspire me" with a captured face but no uploaded image: inject the
+      // user's stored face so the suggestion is gender-aware.
+      if (action === "suggestGarment" && !args?.[0] && !args?.[1] && session.user?.id) {
+        try {
+          const ref = await prisma.faceRef.findFirst({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: "asc" },
+          });
+          if (ref) {
+            const buf = await downloadFace(ref.objectPath);
+            if (buf) args[1] = { base64: buf.toString("base64"), mimeType: "image/png" };
+          }
+        } catch (e) {
+          console.warn("[suggestGarment] face lookup failed", e);
+        }
+      }
       return NextResponse.json(await dispatch(action, args));
     }
 

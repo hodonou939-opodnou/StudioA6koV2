@@ -1150,6 +1150,49 @@ Respond ONLY with the technical description text, optimized for an 8K hyper-real
     }, apiKey, 90000); // 90 seconds timeout for image analysis
 };
 
+// "Inspire me" for garments — GENDER-AWARE. Looks at the best available signal
+// (an uploaded garment → an uploaded model photo → the user's captured face,
+// injected server-side) to infer the subject's gender, then proposes ONE
+// outfit appropriate for that gender. With an uploaded garment it also "learns"
+// from it and suggests a similar, elevated idea. Never suggests a gown to a man.
+export const suggestGarment = async (
+  garmentImage?: { base64: string; mimeType: string } | null,
+  subjectImage?: { base64: string; mimeType: string } | null,
+  apiKey?: string,
+): Promise<string> => {
+  if (typeof window !== 'undefined') {
+    return await proxyCallToBackend('suggestGarment', [garmentImage || null, subjectImage || null]);
+  }
+
+  return executeWithRetry(async (ai) => {
+    const parts: any[] = [];
+    let instruction: string;
+    if (garmentImage?.base64) {
+      parts.push({ inlineData: { data: garmentImage.base64, mimeType: garmentImage.mimeType } });
+      instruction =
+        "Look at this garment and infer the gender it is designed for (menswear or womenswear). Propose ONE complete, elevated African-fashion outfit in the SAME spirit and the SAME gender — a fresh idea inspired by it, not a copy — with tasteful accessories suited to that gender.";
+    } else if (subjectImage?.base64) {
+      parts.push({ inlineData: { data: subjectImage.base64, mimeType: subjectImage.mimeType } });
+      instruction =
+        "Look at this person and determine their gender. Propose ONE complete, elegant African-fashion outfit appropriate for that gender. If the person is a MAN, propose menswear (e.g. agbada, senator/sénateur set, dashiki, embroidered kaftan, tailored suit) and NEVER a dress, gown, skirt, heels or women's jewelry. If a WOMAN, propose womenswear.";
+    } else {
+      instruction =
+        "Propose ONE complete, elegant, gender-neutral African-fashion outfit (e.g. a tailored co-ord set or jumpsuit) with tasteful accessories.";
+    }
+    const prompt = `You are a senior African-fashion stylist. ${instruction}
+Rules: reply with ONLY the outfit description in English, ONE vivid sentence (max ~30 words), optimized as a text-to-image prompt. No preamble, no quotes, no markdown, no gender labels.`;
+    parts.push({ text: prompt });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: { parts },
+    });
+    const txt = response.text?.trim();
+    if (txt) return txt.replace(/^["'\s]+|["'\s]+$/g, '');
+    throw new Error('Empty garment suggestion');
+  }, apiKey, 30000);
+};
+
 const adaptGarmentForModel = async (
   modelImage: { base64: string, mimeType: string },
   garmentDescription: string,
